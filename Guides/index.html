@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Renovation Guides</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>🔨 Home Renovations</h1>
+    <div class="subtitle">DIY Reference Library</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Categories</div>
+    <a href="index.html" class="nav-item active">📊 Overview</a>
+    <a href="plumbing/bathroom-rough-in.html" class="nav-item">🚿 Plumbing</a>
+    <a href="#" class="nav-item">⚡ Electrical <span class="tag tag-soon">soon</span></a>
+    <a href="#" class="nav-item">🔲 Drop Ceiling <span class="tag tag-soon">soon</span></a>
+    <a href="#" class="nav-item">🪚 Carpentry <span class="tag tag-soon">soon</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Plumbing Guides</div>
+    <a href="plumbing/bathroom-rough-in.html" class="nav-item">Bathroom Rough-In Guide</a>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="breadcrumb">Home</div>
+
+  <div class="hero">
+    <h1>Home Renovation Guides</h1>
+    <p>A growing reference library of DIY renovation knowledge — compiled from expert videos and tutorials, with precise measurements, materials lists, and step-by-step instructions.</p>
+    <div class="hero-meta">
+      <span>📋 1 Guide</span>
+      <span>🏗️ 4 Categories</span>
+      <span>📅 Updated July 2025</span>
+    </div>
+  </div>
+
+  <div style="margin: 32px 0;">
+    <img src="assets/images/isometric-plumbing.png" alt="Bathroom plumbing isometric illustration" class="responsive" style="width:100%;">
+  </div>
+
+  <h2>Guides by Category</h2>
+
+  <div class="card-grid">
+    <a href="plumbing/bathroom-rough-in.html" class="card">
+      <div class="card-body">
+        <div class="card-icon">🚿</div>
+        <h3>Plumbing</h3>
+        <p>Bathroom rough-in, PEX water lines, PVC drain/waste/vent systems, pipe sizing, and fixture placement.</p>
+        <div style="margin-top:10px"><span class="badge badge-blue">1 guide</span></div>
+      </div>
+    </a>
+
+    <div class="card disabled">
+      <div class="card-body">
+        <div class="card-icon">⚡</div>
+        <h3>Electrical</h3>
+        <p>Wiring, outlets, switches, breaker panels, GFCI/AFCI, lighting circuits, and code-compliant installations.</p>
+        <div style="margin-top:10px"><span class="badge badge-orange">Coming soon</span></div>
+      </div>
+    </div>
+
+    <div class="card disabled">
+      <div class="card-body">
+        <div class="card-icon">🔲</div>
+        <h3>Drop Ceiling</h3>
+        <p>Grid systems, ceiling tiles, LED panel integration, access panels, and soundproofing.</p>
+        <div style="margin-top:10px"><span class="badge badge-orange">Coming soon</span></div>
+      </div>
+    </div>
+
+    <div class="card disabled">
+      <div class="card-body">
+        <div class="card-icon">🪚</div>
+        <h3>Carpentry</h3>
+        <p>Framing, drywall, trim, doors, subfloor, and structural repairs.</p>
+        <div style="margin-top:10px"><span class="badge badge-orange">Coming soon</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h2>How to Use This Site</h2>
+  <p>This site is designed to be your go-to reference during actual renovation work. Each guide includes:</p>
+  <ul style="padding-left:20px; margin:12px 0;">
+    <li><strong>Exact measurements</strong> — drill sizes, pipe diameters, wall distances, heights</li>
+    <li><strong>Materials & tools lists</strong> — everything you need before you start</li>
+    <li><strong>Dimensional diagrams</strong> — visual reference for layout and placement</li>
+    <li><strong>Step-by-step instructions</strong> — ordered walkthroughs for each procedure</li>
+    <li><strong>Pro tips & code notes</strong> — things the video may not emphasize enough</li>
+  </ul>
+
+  <div class="callout callout-warn">
+    <div class="callout-title">⚠️ Always Check Local Codes</div>
+    Plumbing and electrical codes vary by jurisdiction (IPC vs UPC for plumbing, NEC amendments for electrical). Always verify with your local building department before starting work, and pull permits where required.
+  </div>
+
+  <hr class="divider">
+  <p style="font-size:13px; color:var(--text-light);">To add a new guide, send a video link and I'll review it, extract the specs, and add a new page to the site.</p>
+</main>
+</div>
+</body>
+</html>
