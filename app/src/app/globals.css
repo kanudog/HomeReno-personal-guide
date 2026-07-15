@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/*
+ * Blueprint theme tokens.
+ * Screen = blueprint paper (deep blue, light linework).
+ * Print routes remap these to white paper / dark ink (see print.css).
+ */
+:root {
+  --bp-paper: #102e4c;
+  --bp-paper-deep: #0a2138;
+  --bp-paper-raised: #163a5e;
+  --bp-line: #e8f2fc;
+  --bp-line-soft: rgba(232, 242, 252, 0.62);
+  --bp-line-faint: rgba(232, 242, 252, 0.28);
+  --bp-grid-minor: rgba(232, 242, 252, 0.055);
+  --bp-grid-major: rgba(232, 242, 252, 0.11);
+  --bp-accent: #f4a261;
+  --bp-accent-strong: #e8753a;
+  --bp-danger: #ef6b6b;
+  --bp-warn: #f5d16e;
+  --bp-ok: #7fd8a4;
+
+  /* Framing member role colors — shared by 2D SVG and 3D materials */
+  --member-plate: #8ecae6;
+  --member-king: #f4a261;
+  --member-jack: #e9c46a;
+  --member-header: #e76f51;
+  --member-cripple: #a3d977;
+  --member-stud: #e8f2fc;
+  --member-sill: #c9a3ff;
+  --member-corner: #4dd0c4;
+  --member-blocking: #90a8c0;
+}
+
+@theme inline {
+  --color-bp-paper: var(--bp-paper);
+  --color-bp-paper-deep: var(--bp-paper-deep);
+  --color-bp-paper-raised: var(--bp-paper-raised);
+  --color-bp-line: var(--bp-line);
+  --color-bp-line-soft: var(--bp-line-soft);
+  --color-bp-line-faint: var(--bp-line-faint);
+  --color-bp-accent: var(--bp-accent);
+  --color-bp-accent-strong: var(--bp-accent-strong);
+  --color-bp-danger: var(--bp-danger);
+  --color-bp-warn: var(--bp-warn);
+  --color-bp-ok: var(--bp-ok);
+  --font-stencil: var(--font-stencil), "Arial Black", sans-serif;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background-color: var(--bp-paper);
+  color: var(--bp-line);
+  /* True grid-paper background: minor lines + major lines */
+  background-image:
+    linear-gradient(var(--bp-grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid-minor) 1px, transparent 1px),
+    linear-gradient(var(--bp-grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid-major) 1px, transparent 1px);
+  background-size:
+    24px 24px,
+    24px 24px,
+    120px 120px,
+    120px 120px;
+}
+
+/* Drafting-style framed panel used across the app */
+.bp-panel {
+  background-color: var(--bp-paper-deep);
+  border: 1px solid var(--bp-line-faint);
+  border-radius: 4px;
+}
+
+.bp-panel-title {
+  font-family: var(--font-stencil);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--bp-line);
+}
+
+/* Dimension text is always mono */
+.bp-dim {
+  font-family: var(--font-geist-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Print sheet: same components, inverted to white paper / dark ink.
+ * Used by /design/print — on screen as a preview and when printing.
+ */
+.print-sheet {
+  --bp-paper: #ffffff;
+  --bp-paper-deep: #ffffff;
+  --bp-paper-raised: #f2f5f9;
+  --bp-line: #12314e;
+  --bp-line-soft: rgba(18, 49, 78, 0.72);
+  --bp-line-faint: rgba(18, 49, 78, 0.35);
+  --bp-grid-minor: transparent;
+  --bp-grid-major: transparent;
+  --bp-accent: #b45309;
+  --bp-accent-strong: #9a3412;
+  --bp-danger: #b91c1c;
+  --bp-warn: #a16207;
+  --bp-ok: #15803d;
+
+  --member-plate: #1d6fa5;
+  --member-king: #b45309;
+  --member-jack: #a16207;
+  --member-header: #b91c1c;
+  --member-cripple: #4d7c0f;
+  --member-stud: #12314e;
+  --member-sill: #7c3aed;
+  --member-corner: #0f766e;
+  --member-blocking: #475569;
+
+  background: #ffffff;
+  color: var(--bp-line);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+@page {
+  size: letter landscape;
+  margin: 0.4in;
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-sheet {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+}

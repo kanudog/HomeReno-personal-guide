@@ -2,12 +2,22 @@
 
 ## Project: HomeReno-personal-guide
 
-This repo is a personal home renovation knowledge base. It pairs with Claude Code for interactive planning.
+This repo is a personal home renovation knowledge base + a parametric web app. It pairs with Claude Code for interactive planning.
 
 ### What this repo contains
 - `Guides/` — HTML reference site (open `Guides/index.html` in browser)
 - Each guide is a self-contained HTML page with embedded SVG diagrams
 - `Guides/assets/style.css` — shared stylesheet (modify here to restyle all pages)
+- `app/` — **HomeReno app** (Next.js 16 + Supabase, deployed at https://homereno-puce.vercel.app)
+
+### The app (`app/`)
+- Parametric framing designer: exact-dimension wall input → stud layout, rough openings, headers, cut lists, bin-packed shopping lists, nailing schedule, printable cut sheet, interactive 3D (r3f) with .glb/.obj/.scad export.
+- **All lengths are integer sixteenths** (`Sixteenths` branded type in `app/src/lib/units`) — never floats. Metric is display-only.
+- The framing engine is pure functions in `app/src/lib/modules/framing/engine/` with golden + invariant tests (`npm test` in `app/`). Data tables (RO tolerances, header sizing, nailing rules, prices, NC-Wake code notes) are editable constants in `data/`.
+- New trade modules (electrical, plumbing, drop-ceiling) follow the same shape: pure engine + data tables + module folder under `src/lib/modules/`.
+- Supabase project ref `owsuopmdjkrctohkfucm` (schema in `app/supabase/migrations/`); auth-gated `/projects` (proxy.ts), scratch designer at `/design` needs no login.
+- Dev: `npm run dev` in `app/` (predev syncs `Guides/` → `public/guides/`). Deploy: `npx vercel build --prod && npx vercel deploy --prebuilt --prod --yes` from `app/` (CLI is authenticated; local build includes the guides).
+- Gotchas: Turbopack dev cache can serve stale CSS — `rm -rf .next` if styles don't update. Vercel env vars must be added `--no-sensitive` or `vercel env pull` redacts them to empty strings and breaks local prod builds.
 
 ### When working with Claude Code on this repo
 

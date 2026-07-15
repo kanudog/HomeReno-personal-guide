@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Air Sealing & Weatherization Guide | Home Renovation Guides</title>
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<button class="mobile-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<div class="layout">
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>🔨 Home Renovations</h1>
+    <div class="subtitle">DIY Reference Library</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">Categories</div>
+    <a href="../index.html" class="nav-item">📊 Overview</a>
+    <a href="../plumbing/bathroom-rough-in.html" class="nav-item">🚿 Plumbing</a>
+    <a href="air-sealing-weatherization.html" class="nav-item active">🏠 Weatherization</a>
+    <a href="#" class="nav-item">⚡ Electrical <span class="tag tag-soon">soon</span></a>
+    <a href="#" class="nav-item">🔲 Drop Ceiling <span class="tag tag-soon">soon</span></a>
+    <a href="#" class="nav-item">🪚 Carpentry <span class="tag tag-soon">soon</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-section-title">On This Page</div>
+    <a href="#overview" class="nav-item">Overview</a>
+    <a href="#holes" class="nav-item">Holes & Gaps</a>
+    <a href="#windows" class="nav-item">Windows</a>
+    <a href="#doors" class="nav-item">Exterior Doors</a>
+    <a href="#outlets" class="nav-item">Outlets & Switches</a>
+    <a href="#ceiling" class="nav-item">Ceiling & Attic</a>
+    <a href="#chimney" class="nav-item">Chimney & Fireplace</a>
+    <a href="#basement" class="nav-item">Basement & Crawl Space</a>
+    <a href="#detection" class="nav-item">Draft Detection</a>
+    <a href="#materials" class="nav-item">Materials List</a>
+  </div>
+</aside>
+
+<main class="main">
+<div class="breadcrumb"><a href="../index.html">Home</a> › <a href="#">Weatherization</a> › Air Sealing & Weatherization Guide</div>
+
+<h1>Air Sealing & Weatherization Guide</h1>
+<p class="lead">A comprehensive walkthrough of every major air leak point in a typical home — from windows and doors to outlets, attic hatches, and basement sills. Based on a full home remodel in a 1946 New England wood-frame house.</p>
+
+<img src="../assets/images/weatherization-house.jpg" alt="House cross-section showing air leak points" class="responsive" style="width:100%; margin-bottom:32px;">
+
+<!-- OVERVIEW -->
+<h2 id="overview">Overview</h2>
+
+<div class="callout callout-info">
+  <div class="callout-title">📋 Source Video</div>
+  <a href="https://www.youtube.com/watch?v=yV2Jv3fPq9k" target="_blank">"How to Stop Cold Air Leaks in Your House for the Winter"</a> — covers sealing windows, doors, outlets, ceiling penetrations, attic access, chimney, basement sill plate, and draft detection methods.
+</div>
+
+<div class="spec-grid">
+  <div class="spec-box"><div class="spec-label">House Type</div><div class="spec-value">1946</div><div class="spec-detail">New England wood-frame, basement, drywall + fiberglass</div></div>
+  <div class="spec-box blue"><div class="spec-label">Key Principle</div><div class="spec-value">Seal → Insulate → Detect</div><div class="spec-detail">Air sealing first, insulation second, verify third</div></div>
+  <div class="spec-box green"><div class="spec-label">Investment</div><div class="spec-value">$20–$500+</div><div class="spec-detail">From outlet gaskets to full window replacement</div></div>
+  <div class="spec-box accent"><div class="spec-label">Biggest Win</div><div class="spec-value">Attic</div><div class="spec-detail">Warm air rises — sealing attic leaks has highest ROI</div></div>
+</div>
+
+<p>The video walks through a house room-by-room, identifying every type of air leak. The approach is prioritized from cheapest/easiest fixes to major investments. The order below follows the video's structure.</p>
+
+<!-- HOUSE DIAGRAM -->
+<h3>Where Air Leaks Happen — Whole House Map</h3>
+<div class="diagram-container">
+<svg viewBox="0 0 800 520" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, sans-serif;">
+  <rect x="0" y="0" width="800" height="520" fill="#f8f9fb"/>
+  <text x="400" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#1a3a5c">Whole-House Air Leak Map</text>
+
+  <!-- Sky -->
+  <rect x="0" y="30" width="800" height="100" fill="#dbeafe" opacity="0.3"/>
+  <!-- Ground -->
+  <rect x="0" y="430" width="800" height="90" fill="#d4d4d8" opacity="0.5"/>
+
+  <!-- ATTIC -->
+  <polygon points="100,130 400,60 700,130 700,130 100,130" fill="#fef3c7" stroke="#f59e0b" stroke-width="2"/>
+  <text x="400" y="100" text-anchor="middle" font-size="12" font-weight="700" fill="#9a3412">ATTIC</text>
+
+  <!-- Attic ladder leak -->
+  <rect x="180" y="120" width="50" height="14" fill="#ef4444" rx="2"/>
+  <text x="205" y="110" text-anchor="middle" font-size="9" fill="#ef4444" font-weight="700">Attic hatch</text>
+  <line x1="205" y1="100" x2="205" y2="70" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <polygon points="200,72 210,72 205,64" fill="#ef4444"/>
+
+  <!-- Chimney -->
+  <rect x="550" y="50" width="30" height="90" fill="#9ca3af" stroke="#666" stroke-width="1"/>
+  <text x="565" y="45" text-anchor="middle" font-size="9" fill="#666">Chimney</text>
+  <path d="M 545 85 Q 540 80 535 75" fill="none" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="500" y="78" font-size="8" fill="#ef4444">Flue leak</text>
+
+  <!-- Recessed lights -->
+  <circle cx="300" cy="135" r="6" fill="#ef4444" opacity="0.7"/>
+  <circle cx="380" cy="135" r="6" fill="#ef4444" opacity="0.7"/>
+  <circle cx="460" cy="135" r="6" fill="#ef4444" opacity="0.7"/>
+  <text x="400" y="155" text-anchor="middle" font-size="8" fill="#ef4444">Recessed lights (air leaks into attic)</text>
+
+  <!-- SECOND FLOOR -->
+  <rect x="100" y="130" width="600" height="130" fill="#e0e7ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="400" y="150" text-anchor="middle" font-size="11" font-weight="700" fill="#1e40af">SECOND FLOOR</text>
+
+  <!-- Windows with leaks -->
+  <rect x="140" y="175" width="60" height="50" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2" rx="2"/>
+  <text x="170" y="205" text-anchor="middle" font-size="9" fill="#1e40af">Window</text>
+  <path d="M 125 185 L 135 185 M 125 195 L 135 195 M 205 185 L 215 185 M 205 195 L 215 195" stroke="#ef4444" stroke-width="1.5"/>
+  <text x="170" y="240" text-anchor="middle" font-size="8" fill="#ef4444">Weather strip + shrink kit</text>
+
+  <rect x="600" y="175" width="60" height="50" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2" rx="2"/>
+  <text x="630" y="205" text-anchor="middle" font-size="9" fill="#1e40af">Window</text>
+  <path d="M 585 185 L 595 185 M 585 195 L 595 195 M 665 185 L 675 185 M 665 195 L 675 195" stroke="#ef4444" stroke-width="1.5"/>
+
+  <!-- Outlet on exterior wall -->
+  <rect x="110" y="230" width="16" height="20" fill="#fff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="92" y="245" font-size="8" fill="#f59e0b">Outlet</text>
+  <rect x="675" y="230" width="16" height="20" fill="#fff" stroke="#f59e0b" stroke-width="1.5"/>
+  <text x="697" y="245" font-size="8" fill="#f59e0b">Outlet</text>
+
+  <!-- FIRST FLOOR -->
+  <rect x="100" y="260" width="600" height="130" fill="#ccfbf1" stroke="#10b981" stroke-width="1.5"/>
+  <text x="400" y="280" text-anchor="middle" font-size="11" font-weight="700" fill="#065f46">FIRST FLOOR</text>
+
+  <!-- Front door -->
+  <rect x="330" y="300" width="50" height="85" fill="#d1fae5" stroke="#10b981" stroke-width="2" rx="2"/>
+  <text x="355" y="345" text-anchor="middle" font-size="9" fill="#065f46">Door</text>
+  <!-- Door leaks -->
+  <line x1="330" y1="305" x2="325" y2="305" stroke="#ef4444" stroke-width="1.5"/>
+  <line x1="330" y1="345" x2="325" y2="345" stroke="#ef4444" stroke-width="1.5"/>
+  <line x1="355" y1="388" x2="355" y2="395" stroke="#ef4444" stroke-width="2"/>
+  <text x="355" y="410" text-anchor="middle" font-size="8" fill="#ef4444">Sweep + threshold</text>
+  <text x="310" y="320" text-anchor="middle" font-size="8" fill="#ef4444" transform="rotate(-90 310 320)">Strip</text>
+
+  <!-- Window 1st floor -->
+  <rect x="150" y="290" width="60" height="50" fill="#bfdbfe" stroke="#3b82f6" stroke-width="2" rx="2"/>
+  <text x="180" y="320" text-anchor="middle" font-size="9" fill="#1e40af">Window</text>
+
+  <!-- BASEMENT -->
+  <rect x="100" y="390" width="600" height="45" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="400" y="418" text-anchor="middle" font-size="11" font-weight="700" fill="#5b21b6">BASEMENT / FOUNDATION</text>
+
+  <!-- Sill plate -->
+  <rect x="100" y="390" width="600" height="10" fill="#8b5cf6" opacity="0.5"/>
+  <text x="400" y="382" text-anchor="middle" font-size="8" fill="#8b5cf6" font-weight="700">Sill plate — seal all gaps between sill and foundation</text>
+
+  <!-- Crawl space -->
+  <rect x="500" y="435" width="200" height="40" fill="#ede9fe" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="600" y="460" text-anchor="middle" font-size="9" fill="#5b21b6">Crawl space (insulate floor above)</text>
+
+  <!-- Air flow arrows - COLD AIR IN (blue, bottom) -->
+  <g opacity="0.6">
+    <path d="M 50 400 L 95 400" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowBlue)"/>
+    <path d="M 50 260 L 95 260" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowBlue)"/>
+    <path d="M 720 400 L 760 400 M 720 260 L 760 260" stroke="#3b82f6" stroke-width="2" marker-end="url(#arrowBlue)" transform="scale(-1,1) translate(-1520,0)"/>
+  </g>
+
+  <!-- Air flow arrows - WARM AIR OUT (red, top) -->
+  <g opacity="0.6">
+    <line x1="400" y1="55" x2="400" y2="35" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+    <line x1="565" y1="45" x2="565" y2="35" stroke="#ef4444" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  </g>
+
+  <defs>
+    <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <polygon points="0,0 8,4 0,8" fill="#ef4444"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <polygon points="0,0 8,4 0,8" fill="#3b82f6"/>
+    </marker>
+  </defs>
+
+  <!-- Legend -->
+  <g transform="translate(560, 480)">
+    <rect x="0" y="0" width="230" height="35" fill="#fff" stroke="#e2e5ec" rx="6"/>
+    <circle cx="15" cy="12" r="4" fill="#ef4444"/><text x="25" y="15" font-size="9" fill="#666">Warm air out</text>
+    <circle cx="15" cy="26" r="4" fill="#3b82f6"/><text x="25" y="29" font-size="9" fill="#666">Cold air in</text>
+    <rect x="120" y="8" width="10" height="8" fill="#f59e0b"/><text x="135" y="15" font-size="9" fill="#666">Leak point</text>
+  </g>
+</svg>
+<div class="diagram-caption">Figure 1: Whole-house air leak map. Red = warm air escaping (top), Blue = cold air entering (bottom/sides).</div>
+</div>
+
+<!-- HOLES & GAPS -->
+<h2 id="holes">1. Holes, Gaps & Penetrations</h2>
+<p>Start with the obvious: any hole in an exterior wall is a draft source.</p>
+
+<div class="table-wrap">
+<table class="table-compact">
+  <thead><tr><th>Location</th><th>Fix</th><th>Material</th></tr></thead>
+  <tbody>
+    <tr><td>Wall holes (doorknob, damage)</td><td>Patch + insulate behind</td><td>Joint compound, fiberglass scrap</td></tr>
+    <tr><td>Under sink / vanity on exterior wall</td><td>Seal around pipe/wire penetrations</td><td>Great Stuff spray foam (sparingly)</td></tr>
+    <tr><td>Dryer vent gap</td><td>Fill oversized hole around vent pipe</td><td>Spray foam or fiberglass</td></tr>
+    <tr><td>Old/dead exterior vents</td><td>Remove, insulate, side over</td><td>Fiberglass batt + siding</td></tr>
+    <tr><td>Exterior penetrations (hose bibs, wires)</td><td>Walk around house, seal from outside</td><td>Silicone caulk</td></tr>
+    <tr><td>Behind trim (windows/doors)</td><td>When upgrading trim, insulate gap</td><td>Spray foam (low-expansion) or fiberglass</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-title">⚠️ Spray Foam — Use Responsibly</div>
+  Don't go crazy with spray foam. It expands significantly and can warp frames if over-applied. Use <strong>low-expansion</strong> foam around windows/doors. For large gaps, tuck fiberglass first, then seal with foam or caulk.
+</div>
+
+<!-- WINDOWS -->
+<h2 id="windows">2. Windows</h2>
+
+<img src="../assets/images/weatherization-tools.jpg" alt="Weatherization tools and materials" class="responsive" style="width:100%; margin:16px 0;">
+
+<div class="steps">
+  <div class="step">
+    <h4>Remove window AC units and fans</h4>
+    <p>This is step one. Even a "closed" window AC leaks a massive amount of air. Take them out for winter. If you have a through-wall AC unit, build an insulation cover or buy one.</p>
+  </div>
+  <div class="step">
+    <h4>Close storm windows</h4>
+    <p>If you have exterior storm windows, make sure they're fully closed. Easy to forget after removing an AC.</p>
+  </div>
+  <div class="step">
+    <h4>Check/replace weather stripping</h4>
+    <p>On the bottom sash of double-hung windows, check the weather stripping. If worn out, replace with <strong>adhesive-backed foam tape</strong> (available in various thicknesses). Even a tiny gap lets in a surprising amount of cold air.</p>
+  </div>
+  <div class="step">
+    <h4>Check for broken window seals</h4>
+    <p>If you see <strong>condensation between the glass panes</strong>, the Argon gas seal has failed and the window has lost most of its insulating value. Order a replacement sash — much cheaper than a full window replacement.</p>
+  </div>
+  <div class="step">
+    <h4>Apply window shrink film (for drafty/old windows)</h4>
+    <p>For single-pane or storm-only windows, apply a <strong>window insulation shrink kit</strong>:</p>
+    <ul style="padding-left:16px; margin:6px 0; font-size:14px;">
+      <li>Apply double-sided tape around the window trim</li>
+      <li>Cut film to size, press onto tape</li>
+      <li>Shrink with a hair dryer until taut and crystal clear</li>
+      <li><strong>Wipe all condensation dry before sealing</strong> — trapped moisture causes mold</li>
+    </ul>
+  </div>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-title">✅ Shrink Kits Really Work</div>
+  The presenter tested this on a sunroom with only storm windows (no double-pane). After applying the shrink kit, the room warmed up dramatically. They're cheap (~$15/window), easy to install, and removable in spring.
+</div>
+
+<h3>Window Types & Efficiency</h3>
+<div class="table-wrap">
+<table class="table-compact">
+  <thead><tr><th>Window Type</th><th>Efficiency</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>Single-pane glass</td><td>🔴 Poor</td><td>Use shrink kit; consider replacement</td></tr>
+    <tr><td>Single-pane + storm window</td><td>🟡 Fair</td><td>Close storms; shrink kit helps further</td></tr>
+    <tr><td>Double-pane, Argon, Low-E</td><td>🟢 Good</td><td>Modern vinyl replacement; check seals</td></tr>
+    <tr><td>Old wooden double-hung</td><td>🟡 Variable</td><td>Weather strip; consider replacement sash</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- DOORS -->
+<h2 id="doors">3. Exterior Doors</h2>
+
+<div class="steps">
+  <div class="step">
+    <h4>Install or maintain a storm door</h4>
+    <p>If you have one with interchangeable screen/storm panels, swap to the storm (glass) panels for winter.</p>
+  </div>
+  <div class="step">
+    <h4>Check for daylight</h4>
+    <p>Close the door and look for visible light around all edges. <strong>If you can see daylight, you're losing heat.</strong></p>
+  </div>
+  <div class="step">
+    <h4>Seal gaps with caulk</h4>
+    <p>Run a bead of silicone caulk along any gaps in the storm door frame where daylight shows.</p>
+  </div>
+  <div class="step">
+    <h4>Replace worn weather stripping</h4>
+    <p>On the main door, check the weather stripping in the frame channel. Modern types pull out and slide back in. For older doors, peel old foam and apply new <strong>adhesive-backed door weather stripping</strong>.</p>
+  </div>
+  <div class="step">
+    <h4>Adjust or replace door sweep</h4>
+    <p>Check the bottom of the door — if you see daylight, the sweep needs adjustment or replacement. <strong>Adjustable sweeps</strong> have screws: loosen, push down until daylight disappears, re-tighten.</p>
+  </div>
+  <div class="step">
+    <h4>Adjust threshold</h4>
+    <p>On newer doors, the threshold has screws. Turn to raise/lower until it creates a tight seal against the sweep.</p>
+  </div>
+  <div class="step">
+    <h4>Install door corner seals</h4>
+    <p>The bottom corners of the door frame are a common leak point. Apply <strong>adhesive-backed corner seal pads</strong> behind the weather stripping, then run a bead of silicone along the bottom.</p>
+  </div>
+  <div class="step">
+    <h4>Check latch tension</h4>
+    <p>If the door doesn't close tightly against the weather stripping, adjust the latch/strike plate to pull the door in further. The seal needs to be slightly compressed when closed.</p>
+  </div>
+</div>
+
+<!-- DOOR DIAGRAM -->
+<div class="diagram-container">
+<svg viewBox="0 0 500 600" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, sans-serif;">
+  <rect x="0" y="0" width="500" height="600" fill="#f8f9fb"/>
+  <text x="250" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#1a3a5c">Exterior Door — Leak Points & Seals</text>
+
+  <!-- Door frame -->
+  <rect x="100" y="40" width="300" height="540" fill="none" stroke="#9ca3af" stroke-width="3"/>
+
+  <!-- Door -->
+  <rect x="110" y="50" width="280" height="520" fill="#fef3c7" stroke="#f59e0b" stroke-width="2" rx="2"/>
+  <text x="250" y="80" text-anchor="middle" font-size="13" font-weight="700" fill="#9a3412">Exterior Door</text>
+
+  <!-- TOP: Weather stripping -->
+  <rect x="110" y="46" width="280" height="8" fill="#10b981" opacity="0.7"/>
+  <text x="400" y="52" font-size="9" fill="#065f46" font-weight="700">① Weather strip (top)</text>
+  <line x1="390" y1="50" x2="395" y2="50" stroke="#10b981" stroke-width="1.5"/>
+
+  <!-- SIDES: Weather stripping -->
+  <rect x="106" y="50" width="8" height="520" fill="#10b981" opacity="0.7"/>
+  <rect x="386" y="50" width="8" height="520" fill="#10b981" opacity="0.7"/>
+  <text x="400" y="300" font-size="9" fill="#065f46" font-weight="700">② Weather strip</text>
+  <text x="400" y="312" font-size="9" fill="#065f46">(channel seal)</text>
+
+  <!-- BOTTOM: Door sweep -->
+  <rect x="106" y="565" width="288" height="14" fill="#3b82f6" opacity="0.7"/>
+  <text x="400" y="575" font-size="9" fill="#1e40af" font-weight="700">④ Door sweep</text>
+
+  <!-- Threshold -->
+  <rect x="100" y="580" width="300" height="8" fill="#666"/>
+  <text x="400" y="588" font-size="9" fill="#666" font-weight="700">⑤ Threshold (adjustable)</text>
+
+  <!-- Corner seals -->
+  <circle cx="112" cy="562" r="8" fill="#ef4444" opacity="0.7"/>
+  <circle cx="388" cy="562" r="8" fill="#ef4444" opacity="0.7"/>
+  <text x="60" y="555" font-size="8" fill="#ef4444" font-weight="700">⑥ Corner</text>
+  <text x="60" y="565" font-size="8" fill="#ef4444">seal</text>
+
+  <!-- Hinges -->
+  <rect x="106" y="100" width="8" height="20" fill="#666"/>
+  <rect x="106" y="280" width="8" height="20" fill="#666"/>
+  <rect x="106" y="460" width="8" height="20" fill="#666"/>
+
+  <!-- Doorknob -->
+  <circle cx="360" cy="300" r="8" fill="#666"/>
+
+  <!-- Latch adjustment note -->
+  <text x="250" y="430" text-anchor="middle" font-size="10" fill="#8b5cf6" font-weight="700">③ Adjust latch to compress seal</text>
+  <text x="250" y="442" text-anchor="middle" font-size="9" fill="#8b5cf6">(move strike plate inward)</text>
+
+  <!-- Daylight indicators -->
+  <g opacity="0.6">
+    <text x="80" y="565" font-size="14" fill="#ef4444">⚠</text>
+    <text x="410" y="565" font-size="14" fill="#ef4444">⚠</text>
+    <text x="250" y="600" text-anchor="middle" font-size="8" fill="#ef4444">Most common leak: bottom corners + sweep gap</text>
+  </g>
+</svg>
+<div class="diagram-caption">Figure 2: Exterior door seal points — 6 locations to check and seal.</div>
+</div>
+
+<!-- OUTLETS -->
+<h2 id="outlets">4. Outlets & Switches on Exterior Walls</h2>
+<p>Electrical boxes on exterior walls are a surprising source of drafts. The gap between the box and drywall is never airtight on standard installations.</p>
+
+<div class="steps">
+  <div class="step">
+    <h4>Remove the cover plate</h4>
+    <p>Turn off power at the breaker first. Unscrew the cover plate.</p>
+  </div>
+  <div class="step">
+    <h4>Caulk around the box perimeter</h4>
+    <p>Run a thin bead of caulk <strong>between the electrical box and the drywall</strong> — all the way around. Do NOT put anything inside the box itself; that space is for wiring only.</p>
+    <div class="callout callout-danger" style="margin:8px 0;">
+      <strong>Never insulate inside the electrical box.</strong> Only seal the gap between the box edge and drywall.
+    </div>
+  </div>
+  <div class="step">
+    <h4>Install foam socket sealers</h4>
+    <p>These are pre-cut thin foam gaskets that go behind the cover plate. Available for outlets ($3–5/pack) and both toggle and Decora switches. Just place over the device, screw the plate back on.</p>
+  </div>
+  <div class="step">
+    <h4>Let caulk dry before reassembling</h4>
+    <p>If you caulk first, let it skin over before putting the plate back so it doesn't stick.</p>
+  </div>
+</div>
+
+<div class="callout callout-code">
+  <div class="callout-title">💡 Best Long-Term Fix: Sealed Electrical Boxes</div>
+  If you're doing a remodel anyway, install <strong>energy-saving electrical boxes</strong> with built-in foam gaskets that seal against the drywall, and foam-sealed wire entry points. Much better than retrofitting.
+</div>
+
+<!-- CEILING -->
+<h2 id="ceiling">5. Ceiling & Attic (Biggest Impact)</h2>
+<p>Warm air rises. Every penetration in your ceiling is a direct path for heated air to escape into the attic and out through the roof.</p>
+
+<h3>Attic Insulation</h3>
+<div class="steps">
+  <div class="step">
+    <h4>Check existing insulation depth</h4>
+    <p>Pull up attic floorboards (if present) and check. If old/thin/contaminated (mice), remove and replace.</p>
+  </div>
+  <div class="step">
+    <h4>Add more if needed</h4>
+    <p>You can layer unfaced fiberglass or mineral wool batts <strong>perpendicular</strong> to existing. If there's already a vapor barrier (facing), do NOT add another one — it'll trap moisture.</p>
+  </div>
+  <div class="step">
+    <h4>Consider an energy audit program</h4>
+    <p>Many states have programs (e.g., <strong>Mass Save</strong> in Massachusetts) that provide free or low-cost energy audits and may subsidize insulation. Check your local programs.</p>
+  </div>
+</div>
+
+<h3>Attic Ladder / Hatch Box</h3>
+<p>A pull-down attic staircase is essentially a large, uninsulated hole in your ceiling. Build or buy an insulated cover box that fits over the opening from the attic side.</p>
+
+<h3>Recessed Light Upgrades</h3>
+<div class="table-wrap">
+<table class="table-compact">
+  <thead><tr><th>Type</th><th>Air Leakage</th><th>Upgrade Path</th></tr></thead>
+  <tbody>
+    <tr><td>Old recessed can (incandescent)</td><td>🔴 High — large dome penetrates ceiling</td><td>Difficult to seal; consider full LED conversion kit</td></tr>
+    <tr><td>Older canless LED (thick housing)</td><td>🟡 Moderate — large housing blocks insulation</td><td>Upgrade to ultra-thin</td></tr>
+    <tr><td>Halo ultra-thin LED</td><td>🟢 Low — nearly flush, insulation fits around/over</td><td>Best option — allows full insulation coverage</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-title">✅ Ultra-Thin LED Upgrade</div>
+  Swapping old canless lights for ultra-thin LEDs (like Halo LTE/RL) is one of the highest-ROI ceiling upgrades. They're ~½" thick vs several inches, so insulation can cover right over them. The presenter upgraded during his remodel.
+</div>
+
+<!-- CHIMNEY -->
+<h2 id="chimney">6. Chimney & Fireplace</h2>
+<ul style="padding-left:20px; margin:12px 0;">
+  <li><strong>Close the flue</strong> when the fireplace isn't in use. This is the #1 chimney heat loss.</li>
+  <li>Close any fireplace glass/doors</li>
+  <li>Consider a <strong>chimney balloon</strong> — an inflatable pillow that seals the chimney completely when not in use</li>
+</ul>
+<div class="callout callout-danger">
+  <div class="callout-title">🚫 Remove chimney balloon before lighting a fire!</div>
+  If you use a chimney balloon, you MUST remove it before lighting any fire. A lit fire against a plastic balloon is a serious hazard.
+</div>
+
+<!-- BASEMENT -->
+<h2 id="basement">7. Basement & Crawl Space</h2>
+
+<h3>Sill Plate (Where House Meets Foundation)</h3>
+<p>This is the most critical basement seal. In new construction, <strong>sill seal</strong> strips go between the foundation and the wood sill. In older homes, gaps exist.</p>
+
+<div class="steps">
+  <div class="step">
+    <h4>Inspect the sill plate</h4>
+    <p>Look for gaps between the sill and foundation, and between double sills.</p>
+  </div>
+  <div class="step">
+    <h4>Caulk all gaps</h4>
+    <p>Run silicone caulk along every visible gap in the sill area.</p>
+  </div>
+  <div class="step">
+    <h4>Paint the sill</h4>
+    <p>Painting the sill seals micro-gaps and adds a moisture barrier.</p>
+  </div>
+  <div class="step">
+    <h4>Insulate each bay</h4>
+    <p>Fill each cavity between floor joists along the rim board with fiberglass or mineral wool. Modern code requires this in new construction.</p>
+  </div>
+</div>
+
+<h3>Bulkhead / Basement Entry</h3>
+<p>Seal all framing gaps in basement stair enclosures. Fill with insulation and cover with plywood or drywall.</p>
+
+<h3>Crawl Spaces</h3>
+<p>If rooms above a crawl space are 5°+ colder than the rest of the house, the floor is uninsulated. Options:</p>
+<ul style="padding-left:20px; margin:12px 0;">
+  <li>Insulate crawl space ceiling (floor joists) with fiberglass or mineral wool batts</li>
+  <li>Insulate any exposed pipes at the same time (freeze protection)</li>
+  <li>Quick fix: lay down area rugs on cold floors above</li>
+</ul>
+
+<!-- DRAFT DETECTION -->
+<h2 id="detection">8. Draft Detection Methods</h2>
+
+<div class="diagram-container">
+<svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg" style="font-family: -apple-system, sans-serif;">
+  <rect x="0" y="0" width="700" height="300" fill="#f8f9fb"/>
+  <text x="350" y="20" text-anchor="middle" font-size="14" font-weight="700" fill="#1a3a5c">Draft Detection Methods — Comparison</text>
+
+  <!-- Method 1: Exhaust fan test -->
+  <rect x="20" y="40" width="210" height="240" fill="#fff" stroke="#e2e5ec" stroke-width="1" rx="8"/>
+  <text x="125" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#1a3a5c">Exhaust Fan Test</text>
+  <text x="125" y="78" text-anchor="middle" font-size="10" fill="#10b981">Free</text>
+  <text x="35" y="100" font-size="10" fill="#666">1. Close all doors &amp; windows</text>
+  <text x="35" y="116" font-size="10" fill="#666">2. Turn on bathroom/kitchen</text>
+  <text x="125" y="128" font-size="10" fill="#666">exhaust fan (vents outside)</text>
+  <text x="35" y="148" font-size="10" fill="#666">3. This depressurizes the house</text>
+  <text x="35" y="168" font-size="10" fill="#666">4. Walk around with lighter</text>
+  <text x="35" y="184" font-size="10" fill="#666">5. Flame flickers = draft found</text>
+  <text x="35" y="210" font-size="10" fill="#ef4444" font-weight="700">Accentuates all leaks</text>
+  <text x="35" y="226" font-size="10" fill="#666">Best for: finding hidden</text>
+  <text x="125" y="238" font-size="10" fill="#666">draft sources</text>
+  <text x="35" y="262" font-size="10" fill="#666">Use match (blow out, watch</text>
+  <text x="125" y="274" font-size="10" fill="#666">smoke pull)</text>
+
+  <!-- Method 2: Lighter/match -->
+  <rect x="245" y="40" width="210" height="240" fill="#fff" stroke="#e2e5ec" stroke-width="1" rx="8"/>
+  <text x="350" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#1a3a5c">Lighter / Match Test</text>
+  <text x="350" y="78" text-anchor="middle" font-size="10" fill="#10b981">Free</text>
+  <text x="260" y="100" font-size="10" fill="#666">1. Hold a lit lighter near</text>
+  <text x="350" y="112" font-size="10" fill="#666">suspected leak points</text>
+  <text x="260" y="132" font-size="10" fill="#666">2. Steady flame = no draft</text>
+  <text x="260" y="148" font-size="10" fill="#666">3. Flickering = small draft</text>
+  <text x="260" y="164" font-size="10" fill="#666">4. Blowing out = major draft</text>
+  <text x="260" y="190" font-size="10" fill="#666">5. Use a just-blown-out match</text>
+  <text x="350" y="202" font-size="10" fill="#666">to see smoke direction</text>
+  <text x="260" y="228" font-size="10" fill="#666">Check: outlets, door edges,</text>
+  <text x="350" y="240" font-size="10" fill="#666">window edges, baseboards</text>
+  <text x="260" y="262" font-size="10" fill="#666">Best for: quick spot checks</text>
+
+  <!-- Method 3: Thermal camera -->
+  <rect x="470" y="40" width="210" height="240" fill="#fff" stroke="#e2e5ec" stroke-width="1" rx="8"/>
+  <text x="575" y="62" text-anchor="middle" font-size="13" font-weight="700" fill="#1a3a5c">Thermal Imaging Camera</text>
+  <text x="575" y="78" text-anchor="middle" font-size="10" fill="#f59e0b">$$ ($150–$400+)</text>
+  <text x="485" y="100" font-size="10" fill="#666">1. Scan walls, ceilings, floors</text>
+  <text x="485" y="116" font-size="10" fill="#666">2. Blue = cold (missing insul.)</text>
+  <text x="485" y="132" font-size="10" fill="#666">3. Red/orange = warm (inside)</text>
+  <text x="485" y="148" font-size="10" fill="#666">4. Shows exact insulation gaps</text>
+  <text x="485" y="164" font-size="10" fill="#666">5. Reveals hidden moisture</text>
+  <text x="485" y="190" font-size="10" fill="#666">Finds: missing insulation,</text>
+  <text x="575" y="202" font-size="10" fill="#666">air leaks, wet spots, thermal</text>
+  <text x="575" y="214" font-size="10" fill="#666">bridges</text>
+  <text x="485" y="240" font-size="10" fill="#666">Best for: major overhaul</text>
+  <text x="575" y="252" font-size="10" fill="#666">or before buying a home</text>
+  <text x="485" y="272" font-size="10" fill="#10b981">Can rent from Home Depot</text>
+</svg>
+<div class="diagram-caption">Figure 3: Three draft detection methods — from free to professional grade.</div>
+</div>
+
+<!-- MATERIALS LIST -->
+<h2 id="materials">Materials & Tools Checklist</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Item</th><th>Spec</th><th>Best For</th><th>~Cost</th></tr></thead>
+  <tbody>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Sealants</td></tr>
+    <tr><td>Silicone caulk</td><td>Clear or white, exterior grade</td><td>Gaps around frames, boxes, sills</td><td>$5/tube</td></tr>
+    <tr><td>Low-expansion spray foam</td><td>Window &amp; door rated</td><td>Pipe/wire penetrations, large gaps</td><td>$8/can</td></tr>
+    <tr><td>Joint compound</td><td>Standard</td><td>Patching wall holes</td><td>$8/qt</td></tr>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Weather Stripping</td></tr>
+    <tr><td>Adhesive foam tape</td><td>Various thicknesses</td><td>Window sashes, door frames</td><td>$7/roll</td></tr>
+    <tr><td>Door channel weather strip</td><td>Replacement for specific door</td><td>Exterior door perimeter</td><td>$15–25</td></tr>
+    <tr><td>Adjustable door sweep</td><td>Aluminum + rubber/vinyl blade</td><td>Bottom of exterior door</td><td>$15–25</td></tr>
+    <tr><td>Door corner seals</td><td>Adhesive-backed rubber</td><td>Bottom corners of door frame</td><td>$6/pair</td></tr>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Window</td></tr>
+    <tr><td>Window shrink film kit</td><td>3M or Frost King, double-sided tape + film</td><td>Single-pane or drafty windows</td><td>$15/window</td></tr>
+    <tr><td>Through-wall AC cover</td><td>Insulated exterior or interior cover</td><td>Wall AC units</td><td>$30–50</td></tr>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Electrical</td></tr>
+    <tr><td>Outlet/switch foam sealers</td><td>Pre-cut gaskets (outlet, toggle, Decora)</td><td>All exterior wall outlets/switches</td><td>$3–5/pack</td></tr>
+    <tr><td>Sealed electrical boxes</td><td>Foam-gasketed boxes (new work)</td><td>Remodel — exterior wall outlets</td><td>$3/each</td></tr>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Attic / Ceiling</td></tr>
+    <tr><td>Fiberglass batts (unfaced)</td><td>R-30 to R-49, depending on zone</td><td>Adding attic insulation layer</td><td>$0.70–$1.20/sq ft</td></tr>
+    <tr><td>Attic stair cover box</td><td>Insulated, DIY or purchased</td><td>Pull-down attic stairs</td><td>$40–80</td></tr>
+    <tr><td>Ultra-thin LED recessed lights</td><td>Halo LTE/RL series or equivalent</td><td>Replacing old canless/can lights</td><td>$15–25/each</td></tr>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Chimney</td></tr>
+    <tr><td>Chimney balloon</td><td>Sized to your flue</td><td>Unused fireplace chimneys</td><td>$40–60</td></tr>
+    <tr><td colspan="4" style="background:var(--primary);color:#fff;font-weight:700;">Detection</td></tr>
+    <tr><td>Lighter + matches</td><td>Standard</td><td>Spot draft detection</td><td>$2</td></tr>
+    <tr><td>Thermal imaging camera</td><td>FLIR, Seek, or rental</td><td>Full-home energy audit</td><td>$150–$400 or rent</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- PRO TIPS -->
+<h2>Pro Tips</h2>
+
+<div class="callout callout-tip">
+  <div class="callout-title">✅ Prioritize by ROI</div>
+  Biggest bang for buck: <strong>(1) Attic insulation + hatch cover, (2) Door sweeps + weather stripping, (3) Outlet gaskets, (4) Window shrink kits.</strong> These four together cost under $200 and make a noticeable difference.
+</div>
+
+<div class="callout callout-tip">
+  <div class="callout-title">✅ Exhaust Fan Depressurization Test</div>
+  Close everything, turn on a bathroom or kitchen exhaust fan (one that vents outside). This creates negative pressure that amplifies all leaks. Walk around with a lighter — flickering flames pinpoint every draft.
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-title">⚠️ Don't Double Vapor Barriers</div>
+  If existing attic insulation has a vapor barrier (facing/kraft paper), do NOT add another layer with facing. Use unfaced batts or blown-in. Two barriers trap moisture → mold and rot.
+</div>
+
+<div class="callout callout-warn">
+  <div class="callout-title">⚠️ Dry Before You Seal Windows</div>
+  If using shrink film, wipe all condensation off the glass and let it dry completely before applying. Trapped moisture between film and glass causes mold.
+</div>
+
+<div class="callout callout-code">
+  <div class="callout-title">💡 Check for Local Energy Programs</div>
+  Many states offer free energy audits + subsidized insulation through programs like Mass Save, NYSERDA, or utility company rebates. Search "<your state> energy audit program" — can save thousands on insulation projects.
+</div>
+
+<div class="callout callout-danger">
+  <div class="callout-title">🚫 Never Seal Inside Electrical Boxes</div>
+  Only seal the gap between the box and drywall. The box interior is for wiring only — foam or insulation inside creates a fire hazard and violates code.
+</div>
+
+<div class="source-tag">
+  📹 Source video: <a href="https://www.youtube.com/watch?v=yV2Jv3fPq9k" target="_blank">"How to Stop Cold Air Leaks in Your House for the Winter | Make Your Home More Energy Efficient"</a><br>
+  📅 Compiled: July 15, 2025
+</div>
+
+</main>
+</div>
+</body>
+</html>
