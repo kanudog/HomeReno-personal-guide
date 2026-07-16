@@ -28,14 +28,14 @@ type TabId = (typeof TABS)[number]["id"];
 
 /** Illustrations generated for the repeatable steps (see /public/steps). */
 const STEP_IMAGES: Record<number, string> = {
-  0: "/steps/step-plates.png",
-  1: "/steps/step-studs.png",
-  2: "/steps/step-jacks.png",
-  3: "/steps/step-header.png",
-  4: "/steps/step-cripples.png",
-  5: "/steps/step-sill.png",
-  6: "/steps/step-blocking.png",
-  7: "/steps/step-raise.png",
+  0: "/steps/step-plates.jpg",
+  1: "/steps/step-studs.jpg",
+  2: "/steps/step-jacks.jpg",
+  3: "/steps/step-header.jpg",
+  4: "/steps/step-cripples.jpg",
+  5: "/steps/step-sill.jpg",
+  6: "/steps/step-blocking.jpg",
+  7: "/steps/step-raise.jpg",
 };
 
 export function OutputTabs({ output, system }: { output: FramingOutput; system: UnitSystem }) {

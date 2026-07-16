@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
-import { Edges, OrbitControls } from "@react-three/drei";
+import { useMemo, useRef, useState } from "react";
+import { Canvas, type ThreeEvent } from "@react-three/fiber";
+import { Edges, Line, OrbitControls } from "@react-three/drei";
 import type { MemberRole, StudLayout } from "@/lib/modules/framing/types";
 import { ASSEMBLY_STEPS } from "@/lib/modules/framing/engine/tasks";
+import { formatLength, type Sixteenths } from "@/lib/units";
 import { layoutToSolids, type Solid } from "@/lib/three/solids";
+import { generateFasteners } from "@/lib/three/fasteners";
 import { exportGLB, exportOBJ, exportText } from "@/lib/three/exporters";
 import { generateOpenSCAD } from "@/lib/three/openscad";
 
@@ -42,8 +44,23 @@ const EXPLODE_DIR: Record<MemberRole, [number, number, number]> = {
   blocking: [0, 0, 24],
 };
 
-function SolidMesh({ solid, explode }: { solid: Solid; explode: number }) {
-  const [hover, setHover] = useState(false);
+interface Selected {
+  id: string;
+  label: string;
+  lengthIn: number;
+}
+
+function SolidMesh({
+  solid,
+  explode,
+  selected,
+  onPick,
+}: {
+  solid: Solid;
+  explode: number;
+  selected: boolean;
+  onPick: (e: ThreeEvent<MouseEvent>, s: Solid) => void;
+}) {
   const dir = EXPLODE_DIR[solid.role];
   const pos: [number, number, number] = [
     solid.position[0] + dir[0] * explode,
@@ -51,21 +68,14 @@ function SolidMesh({ solid, explode }: { solid: Solid; explode: number }) {
     solid.position[2] + dir[2] * explode,
   ];
   return (
-    <mesh
-      position={pos}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        setHover(true);
-      }}
-      onPointerOut={() => setHover(false)}
-    >
+    <mesh position={pos} onClick={(e) => onPick(e, solid)}>
       <boxGeometry args={solid.size} />
       <meshStandardMaterial
         color={ROLE_COLOR[solid.role]}
         roughness={0.85}
         metalness={0}
-        emissive={hover ? "#f4a261" : "#000000"}
-        emissiveIntensity={hover ? 0.35 : 0}
+        emissive={selected ? "#f4a261" : "#000000"}
+        emissiveIntensity={selected ? 0.5 : 0}
       />
       <Edges color="#0a2138" lineWidth={1} />
     </mesh>
@@ -74,15 +84,43 @@ function SolidMesh({ solid, explode }: { solid: Solid; explode: number }) {
 
 export function FramingScene({ layout }: { layout: StudLayout }) {
   const solids = useMemo(() => layoutToSolids(layout), [layout]);
+  const fasteners = useMemo(() => generateFasteners(layout), [layout]);
   const [explode, setExplode] = useState(0);
   const [step, setStep] = useState(ASSEMBLY_STEPS.length - 1);
-  const [hoverInfo] = useState<string | null>(null);
+  const [showNails, setShowNails] = useState(false);
+  const [exportHardware, setExportHardware] = useState(false);
+  const [selected, setSelected] = useState<Selected | null>(null);
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measurePts, setMeasurePts] = useState<[number, number, number][]>([]);
+  const measureRef = useRef(false);
 
   const L = (layout.input.length as number) / 16;
   const H = (layout.input.height as number) / 16;
   const visible = solids.filter((s) => s.assemblyStep <= step);
 
   const stamp = `wall-${Math.round(L)}x${Math.round(H)}`;
+  const exportFasteners = exportHardware ? fasteners : [];
+
+  const pick = (e: ThreeEvent<MouseEvent>, s: Solid) => {
+    e.stopPropagation();
+    if (measureRef.current) {
+      const p: [number, number, number] = [e.point.x, e.point.y, e.point.z];
+      setMeasurePts((pts) => (pts.length >= 2 ? [p] : [...pts, p]));
+    } else {
+      const long = Math.max(...s.size);
+      setSelected({ id: s.id, label: s.label, lengthIn: long });
+    }
+  };
+
+  const measureText = (() => {
+    const [a, b] = measurePts;
+    if (!a || !b) return null;
+    const d = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+    const rise = Math.abs(b[1] - a[1]);
+    const run = Math.hypot(b[0] - a[0], b[2] - a[2]);
+    const elev = run > 0.01 && rise > 0.01 ? ` @ ${((Math.atan2(rise, run) * 180) / Math.PI).toFixed(1)}° elevation` : "";
+    return `${formatLength(Math.round(d * 16) as Sixteenths, { feetInches: true })}${elev}`;
+  })();
 
   return (
     <div className="flex flex-col gap-3">
@@ -107,9 +145,7 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
           </button>
         </div>
         <label className="flex items-center gap-2">
-          <span className="bp-dim text-[10px] uppercase tracking-widest text-bp-line-soft">
-            Explode
-          </span>
+          <span className="bp-dim text-[10px] uppercase tracking-widest text-bp-line-soft">Explode</span>
           <input
             type="range"
             min={0}
@@ -120,14 +156,55 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
             className="w-36 accent-[var(--bp-accent)]"
           />
         </label>
-        <div className="flex gap-2">
-          <ExportButton label=".glb" onClick={() => exportGLB(solids, `${stamp}.glb`)} />
-          <ExportButton label=".obj" onClick={() => exportOBJ(solids, `${stamp}.obj`)} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowNails((v) => !v)}
+            className={`bp-dim rounded-sm border px-3 py-1.5 text-[11px] uppercase tracking-widest transition-colors ${
+              showNails ? "border-bp-ok text-bp-ok" : "border-bp-line-faint text-bp-line-soft"
+            }`}
+          >
+            Nails
+          </button>
+          <button
+            onClick={() => {
+              measureRef.current = !measureRef.current;
+              setMeasureMode(measureRef.current);
+              setMeasurePts([]);
+            }}
+            className={`bp-dim rounded-sm border px-3 py-1.5 text-[11px] uppercase tracking-widest transition-colors ${
+              measureMode ? "border-bp-ok text-bp-ok" : "border-bp-line-faint text-bp-line-soft"
+            }`}
+          >
+            Measure
+          </button>
+          <ExportButton label=".glb" onClick={() => exportGLB(solids, `${stamp}.glb`, exportFasteners)} />
+          <ExportButton label=".obj" onClick={() => exportOBJ(solids, `${stamp}.obj`, exportFasteners)} />
           <ExportButton
             label=".scad"
             onClick={() => exportText(generateOpenSCAD(layout, solids), `${stamp}.scad`)}
           />
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={exportHardware}
+              onChange={(e) => setExportHardware(e.target.checked)}
+              className="h-4 w-4 accent-[var(--bp-accent)]"
+            />
+            <span className="bp-dim text-[9px] uppercase tracking-widest text-bp-line-soft">
+              export nails
+            </span>
+          </label>
         </div>
+      </div>
+
+      <div className="bp-dim flex min-h-5 items-center text-[11px] text-bp-line-soft">
+        {measureMode
+          ? measureText
+            ? `${measureText} — click again to restart`
+            : `click ${measurePts.length === 0 ? "the first" : "the second"} point on any piece`
+          : selected
+            ? `${selected.id} · ${selected.label} · ${formatLength(Math.round(selected.lengthIn * 16) as Sixteenths, { feetInches: true })} — click empty space to dismiss`
+            : "click a piece for its name and length · drag to orbit"}
       </div>
 
       <div
@@ -138,16 +215,46 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
           camera={{ position: [L * 0.75, H * 0.7, L * 0.9], fov: 40, near: 1, far: 5000 }}
           gl={{ preserveDrawingBuffer: true, antialias: true }}
           onCreated={({ camera }) => camera.lookAt(L / 2, H / 2, 0)}
+          onPointerMissed={() => {
+            if (!measureRef.current) setSelected(null);
+          }}
         >
           <ambientLight intensity={0.55} />
           <directionalLight position={[L, H * 2, L]} intensity={1.1} />
           <directionalLight position={[-L, H, -L]} intensity={0.4} />
           <group>
             {visible.map((s) => (
-              <SolidMesh key={s.id} solid={s} explode={explode} />
+              <SolidMesh
+                key={s.id}
+                solid={s}
+                explode={explode}
+                selected={selected?.id === s.id}
+                onPick={pick}
+              />
+            ))}
+            {showNails &&
+              fasteners.map((f) => (
+                <mesh
+                  key={f.id}
+                  position={f.position}
+                  rotation={
+                    f.axis === "x" ? [0, 0, Math.PI / 2] : f.axis === "z" ? [Math.PI / 2, 0, 0] : [0, 0, 0]
+                  }
+                >
+                  <cylinderGeometry args={[f.radius * 3, f.radius * 3, f.length, 8]} />
+                  <meshStandardMaterial color="#c3ccd6" metalness={0.65} roughness={0.35} />
+                </mesh>
+              ))}
+            {measurePts.length === 2 && (
+              <Line points={measurePts} color="#7fd8a4" lineWidth={2.5} />
+            )}
+            {measurePts.map((p, i) => (
+              <mesh key={i} position={p}>
+                <sphereGeometry args={[0.9, 12, 12]} />
+                <meshBasicMaterial color="#7fd8a4" />
+              </mesh>
             ))}
           </group>
-          {/* floor reference grid, 12" squares */}
           <gridHelper
             args={[Math.max(L, H) * 2, Math.round((Math.max(L, H) * 2) / 12), "#2c5f8a", "#16395c"]}
             position={[L / 2, -1, 0]}
@@ -155,10 +262,10 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
           <OrbitControls target={[L / 2, H / 2, 0]} enableDamping makeDefault />
         </Canvas>
       </div>
-      {hoverInfo && <p className="bp-dim text-[11px] text-bp-line-soft">{hoverInfo}</p>}
       <p className="bp-dim text-[10px] text-bp-line-soft">
-        Drag to orbit · pinch/scroll to zoom · two-finger drag to pan. Exports: .glb/.obj open in
-        Blender; .scad opens in OpenSCAD (parametric, commented per member).
+        Nails are drawn oversized (3×) so they read at wall scale — counts and joints follow the
+        fastening schedule. Exports: .glb/.obj open in Blender (check &quot;export nails&quot; to
+        include hardware); .scad opens in OpenSCAD.
       </p>
     </div>
   );

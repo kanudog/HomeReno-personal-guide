@@ -112,6 +112,17 @@ export const useEditor = create<EditorState>()(
     {
       name: "homereno-design",
       partialize: (s) => ({ wall: s.wall, costOverrides: s.costOverrides }),
+      // walls persisted by older versions may predate newer fields
+      merge: (persisted, current) => {
+        const p = persisted as Partial<EditorState> | undefined;
+        return {
+          ...current,
+          ...p,
+          wall: p?.wall
+            ? { ...p.wall, bottomPlatePT: p.wall.bottomPlatePT ?? true }
+            : current.wall,
+        };
+      },
     },
   ),
 );

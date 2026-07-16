@@ -10,6 +10,14 @@ const modules = [
     ready: true,
   },
   {
+    id: "rooms",
+    title: "Room Planner",
+    description:
+      "Draw connected walls top-down — corner framing details, per-wall elevations, whole-room cut list, combined 3D with view cube.",
+    href: "/rooms",
+    ready: true,
+  },
+  {
     id: "electrical",
     title: "Electrical",
     description:

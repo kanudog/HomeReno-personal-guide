@@ -101,7 +101,7 @@ export function WallForm({
           <label className="flex h-11 items-center gap-2 self-end">
             <input
               type="checkbox"
-              checked={wall.bottomPlatePT}
+              checked={wall.bottomPlatePT ?? true}
               onChange={(e) => onWall({ bottomPlatePT: e.target.checked })}
               className="h-5 w-5 accent-[var(--bp-accent)]"
             />

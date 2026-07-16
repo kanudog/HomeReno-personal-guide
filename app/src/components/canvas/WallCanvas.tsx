@@ -254,16 +254,34 @@ export function WallCanvas({ system }: WallCanvasProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2">
           <ToolbarButton label="Undo" disabled={!canUndo} onClick={() => temporal.getState().undo()} />
           <ToolbarButton label="Redo" disabled={!canRedo} onClick={() => temporal.getState().redo()} />
           <ToolbarButton label="Fit" onClick={() => setView({ zoom: 1, tx: 0, ty: 0 })} />
+          <button
+            onClick={toggleMeasure}
+            className={`bp-dim rounded-sm border px-3 py-1.5 text-[11px] uppercase tracking-widest transition-colors ${
+              measureMode
+                ? "border-bp-ok bg-bp-paper-deep text-bp-ok"
+                : "border-bp-line-faint text-bp-line-soft hover:border-bp-accent hover:text-bp-accent"
+            }`}
+          >
+            Measure
+          </button>
         </div>
         <span className="bp-dim text-[10px] uppercase tracking-widest text-bp-line-soft">
           {drag?.snap
             ? `${formatLength(drag.snap.offset as Sixteenths, { system, feetInches: true })} from wall left${drag.snap.kind !== "grid" ? ` · ${snapLabel(drag.snap.kind)}` : ""}`
-            : "drag opening to move · drag background to pan · pinch/wheel to zoom"}
+            : measureMode
+              ? measurePts.length === 0
+                ? "tap the first point"
+                : measurePts.length === 1
+                  ? "tap the second point"
+                  : measureLabel(measurePts, system)
+              : info
+                ? `${info.id} · ${info.label} · ${formatLength(info.length, { system, feetInches: true })} — tap empty space to dismiss`
+                : "drag opening · tap a piece for info · pinch/wheel to zoom"}
         </span>
       </div>
 
@@ -301,12 +319,29 @@ export function WallCanvas({ system }: WallCanvasProps) {
               layout={output.layout as StudLayout}
               selectedOpeningId={drag?.openingId ?? selectedOpeningId}
               guideX={drag?.snap?.guideX ?? null}
+              infoMemberId={info?.id ?? null}
+              measurePts={measurePts}
+              system={system}
             />
           </WallElevation>
         </div>
       </div>
     </div>
   );
+}
+
+function measureLabel(pts: { x: number; y: number }[], system: UnitSystem): string {
+  const [a, b] = pts;
+  if (!a || !b) return "";
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const dist = Math.round(Math.hypot(dx, dy)) as Sixteenths;
+  const base = formatLength(dist, { system, feetInches: true });
+  if (dx !== 0 && dy !== 0) {
+    const deg = Math.abs((Math.atan2(dy, dx) * 180) / Math.PI);
+    return `${base} @ ${deg.toFixed(1)}° from horizontal — tap again to restart`;
+  }
+  return `${base} (${dx === 0 ? "vertical" : "horizontal"}) — tap again to restart`;
 }
 
 function snapLabel(kind: SnapResult["kind"]): string {
@@ -324,18 +359,25 @@ function snapLabel(kind: SnapResult["kind"]): string {
   }
 }
 
-/** Model-space overlay: selection highlight + snap guide line. */
+/** Model-space overlay: selection highlight, snap guide, inspect + measure. */
 function CanvasOverlay({
   layout,
   selectedOpeningId,
   guideX,
+  infoMemberId,
+  measurePts,
+  system,
 }: {
   layout: StudLayout;
   selectedOpeningId: string | null;
   guideX: number | null;
+  infoMemberId: string | null;
+  measurePts: { x: number; y: number }[];
+  system: UnitSystem;
 }) {
   const H = layout.input.height as number;
   const fs = Math.max(28, Math.round(Math.max(layout.input.length as number, H) * 0.02));
+  const infoMember = infoMemberId ? layout.members.find((m) => m.id === infoMemberId) : null;
   return (
     <>
       {layout.roughOpenings.map((ro) => {
@@ -379,6 +421,54 @@ function CanvasOverlay({
           strokeWidth={fs * 0.1}
           strokeDasharray={`${fs * 0.4} ${fs * 0.3}`}
         />
+      )}
+
+      {/* inspected member highlight */}
+      {infoMember && (
+        <rect
+          x={infoMember.x as number}
+          y={H - ((infoMember.y as number) + (infoMember.h as number))}
+          width={infoMember.w as number}
+          height={infoMember.h as number}
+          fill="none"
+          stroke="var(--bp-ok)"
+          strokeWidth={fs * 0.16}
+        />
+      )}
+
+      {/* measure points + line + label */}
+      {measurePts.map((p, i) => (
+        <circle key={i} cx={p.x} cy={H - p.y} r={fs * 0.28} fill="var(--bp-ok)" />
+      ))}
+      {measurePts.length === 2 && (
+        <g>
+          <line
+            x1={measurePts[0]!.x}
+            y1={H - measurePts[0]!.y}
+            x2={measurePts[1]!.x}
+            y2={H - measurePts[1]!.y}
+            stroke="var(--bp-ok)"
+            strokeWidth={fs * 0.1}
+          />
+          <text
+            x={(measurePts[0]!.x + measurePts[1]!.x) / 2}
+            y={(H - measurePts[0]!.y + (H - measurePts[1]!.y)) / 2 - fs * 0.5}
+            fontSize={fs * 0.8}
+            fill="var(--bp-ok)"
+            textAnchor="middle"
+            style={{ fontFamily: "var(--font-geist-mono), monospace" }}
+          >
+            {formatLength(
+              Math.round(
+                Math.hypot(
+                  measurePts[1]!.x - measurePts[0]!.x,
+                  measurePts[1]!.y - measurePts[0]!.y,
+                ),
+              ) as Sixteenths,
+              { system, feetInches: true },
+            )}
+          </text>
+        </g>
       )}
     </>
   );
