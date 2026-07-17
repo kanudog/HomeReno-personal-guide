@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { feet, inches } from "@/lib/units";
+import { feet, inches, type Sixteenths } from "@/lib/units";
 import type {
   AdvisorInput,
   ApplianceLoad,
@@ -25,11 +25,15 @@ interface ElectricalEditorState {
   selectedDeviceId: string | null;
   /** Connection step highlighted in the pictorial diagram (null = show all). */
   activeStep: number | null;
+  /** Optional framed-wall routing prefs (phase 6 integration). */
+  wallRouting: { entry: "left" | "right"; drillHeight: Sixteenths };
   costOverrides: Record<string, number>;
   replaceInput: (input: ElectricalInput) => void;
   bindDesign: (designId: string | null, input?: ElectricalInput) => void;
   setPanel: (patch: Partial<PanelInput>) => void;
   addRoom: () => void;
+  /** Room-planner import: one RoomFacts entry from drawn wall lengths. */
+  addRoomWithWalls: (name: string, wallLengths: Sixteenths[]) => void;
   updateRoom: (id: string, patch: Partial<RoomFacts>) => void;
   removeRoom: (id: string) => void;
   addCircuit: () => void;
@@ -47,6 +51,7 @@ interface ElectricalEditorState {
   removeAdvisorLoad: (loadId: string) => void;
   selectDevice: (id: string | null) => void;
   setActiveStep: (step: number | null) => void;
+  setWallRouting: (patch: Partial<{ entry: "left" | "right"; drillHeight: Sixteenths }>) => void;
   setCostOverride: (id: string, cents: number) => void;
 }
 
@@ -119,6 +124,7 @@ export const useElectrical = create<ElectricalEditorState>()(
       boundDesignId: null,
       selectedDeviceId: "device-1",
       activeStep: null,
+      wallRouting: { entry: "left", drillHeight: inches(14) },
       costOverrides: {},
       replaceInput: (input) => set({ input, selectedDeviceId: null, activeStep: null }),
       bindDesign: (boundDesignId, input) =>
@@ -142,6 +148,16 @@ export const useElectrical = create<ElectricalEditorState>()(
                 type: "other",
                 wallLengths: [],
               },
+            ],
+          },
+        })),
+      addRoomWithWalls: (name, wallLengths) =>
+        set((s) => ({
+          input: {
+            ...s.input,
+            rooms: [
+              ...s.input.rooms,
+              { id: nextId("room"), name, type: "other", wallLengths },
             ],
           },
         })),
@@ -304,12 +320,18 @@ export const useElectrical = create<ElectricalEditorState>()(
         })),
       selectDevice: (selectedDeviceId) => set({ selectedDeviceId, activeStep: null }),
       setActiveStep: (activeStep) => set({ activeStep }),
+      setWallRouting: (patch) =>
+        set((s) => ({ wallRouting: { ...s.wallRouting, ...patch } })),
       setCostOverride: (id, cents) =>
         set((s) => ({ costOverrides: { ...s.costOverrides, [id]: cents } })),
     }),
     {
       name: "homereno-electrical",
-      partialize: (s) => ({ input: s.input, costOverrides: s.costOverrides }),
+      partialize: (s) => ({
+        input: s.input,
+        costOverrides: s.costOverrides,
+        wallRouting: s.wallRouting,
+      }),
     },
   ),
 );

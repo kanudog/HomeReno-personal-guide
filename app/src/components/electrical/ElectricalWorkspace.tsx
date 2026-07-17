@@ -3,17 +3,14 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { computeElectrical } from "@/lib/modules/electrical";
-import { computeFraming } from "@/lib/modules/framing";
-import { inches, type Sixteenths } from "@/lib/units";
 import { PictorialBox } from "./svg/PictorialBox";
 import { CircuitSchematic } from "./svg/CircuitSchematic";
 import { ElectricalForm } from "./forms/ElectricalForm";
 import { ElectricalOutputTabs } from "./outputs/ElectricalOutputTabs";
-import { WallElevation } from "@/components/svg/WallElevation";
+import { WallRoutingPanel } from "./WallRoutingPanel";
 import { UnitToggle } from "@/components/ui/UnitToggle";
 import { SEVERITY_COLORS } from "./palette";
 import { useElectrical } from "@/stores/electrical";
-import { useEditor } from "@/stores/editor";
 import { useSettings } from "@/stores/settings";
 
 export interface ElectricalWorkspaceProps {
@@ -35,7 +32,6 @@ export function ElectricalWorkspace({
   const activeStep = useElectrical((s) => s.activeStep);
   const setActiveStep = useElectrical((s) => s.setActiveStep);
   const system = useSettings((s) => s.system);
-  const framedWall = useEditor((s) => s.wall);
 
   const output = useMemo(() => {
     try {
@@ -48,19 +44,6 @@ export function ElectricalWorkspace({
   const plan =
     output?.devicePlans.find((p) => p.deviceId === selectedDeviceId) ?? output?.devicePlans[0];
   const stepCount = plan?.connections.length ?? 0;
-
-  // minimal wall-marker integration: devices flagged onto the scratch framed wall
-  const markedDevices = input.circuits.flatMap((c) =>
-    c.devices.filter((d) => d.wallDesignId !== undefined),
-  );
-  const framedLayout = useMemo(() => {
-    if (markedDevices.length === 0) return null;
-    try {
-      return computeFraming(framedWall).layout;
-    } catch {
-      return null;
-    }
-  }, [markedDevices.length, framedWall]);
 
   return (
     <main className="mx-auto w-full max-w-7xl grow px-4 py-6 sm:px-6">
@@ -188,27 +171,7 @@ export function ElectricalWorkspace({
             </section>
           )}
 
-          {framedLayout && (
-            <section className="bp-panel p-3">
-              <p className="bp-dim mb-2 text-[10px] uppercase tracking-widest text-bp-line-soft">
-                Box positions on the framed wall (from the Framing designer)
-              </p>
-              <WallElevation
-                layout={framedLayout}
-                system={system}
-                markers={markedDevices.map((d) => {
-                  const dp = output?.devicePlans.find((p) => p.deviceId === d.id);
-                  return {
-                    x: (d.xOnWall ?? inches(24)) as Sixteenths,
-                    y: (d.heightAFF ?? inches(12)) as Sixteenths,
-                    w: inches(2.25),
-                    h: inches(3.75),
-                    label: dp?.displayName ?? "Box",
-                  };
-                })}
-              />
-            </section>
-          )}
+          {output && <WallRoutingPanel output={output} system={system} />}
         </div>
 
         <ElectricalForm system={system} />

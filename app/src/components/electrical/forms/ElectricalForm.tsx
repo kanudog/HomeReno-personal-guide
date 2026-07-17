@@ -12,6 +12,7 @@ import type { Sixteenths, UnitSystem } from "@/lib/units";
 import { DEVICES, deviceSpec } from "@/lib/modules/electrical/data/devices";
 import { LOAD_PRESETS } from "@/lib/modules/electrical/data/loads";
 import { MARKER_DEFAULTS, useElectrical } from "@/stores/electrical";
+import { useRoom } from "@/stores/room";
 import { TapeMeasureInput } from "@/components/measure/TapeMeasureInput";
 
 const selectCls =
@@ -153,6 +154,7 @@ function DeviceCard({
   const removeDevice = useElectrical((s) => s.removeDevice);
   const selectDevice = useElectrical((s) => s.selectDevice);
   const selectedDeviceId = useElectrical((s) => s.selectedDeviceId);
+  const planWalls = useRoom((s) => s.plan.walls);
   const spec = deviceSpec(device.kind);
   const config = spec?.configs.find((c) => c.id === device.config);
   const selected = selectedDeviceId === device.id;
@@ -290,6 +292,21 @@ function DeviceCard({
         </label>
         {marked && (
           <span className="flex items-end gap-2" onClick={(e) => e.stopPropagation()}>
+            <label className="flex flex-col gap-0.5">
+              <span className={tinyLabel}>Wall</span>
+              <select
+                className={selectCls}
+                value={device.wallDesignId}
+                onChange={(e) => patch({ wallDesignId: e.target.value })}
+              >
+                <option value="scratch-wall">Framing designer wall</option>
+                {planWalls.map((w) => (
+                  <option key={w.id} value={`room:${w.id}`}>
+                    Planner: {w.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <TapeMeasureInput
               compact
               label="From wall left"
@@ -589,7 +606,23 @@ export function ElectricalForm({ system }: { system: UnitSystem }) {
   const input = useElectrical((s) => s.input);
   const setPanel = useElectrical((s) => s.setPanel);
   const addRoom = useElectrical((s) => s.addRoom);
+  const addRoomWithWalls = useElectrical((s) => s.addRoomWithWalls);
   const addCircuit = useElectrical((s) => s.addCircuit);
+  const planWalls = useRoom((s) => s.plan.walls);
+
+  // Optional planner import: usable floor line per wall = drawn length minus
+  // door openings (doors break the 210.52 wall line; windows don't).
+  const importPlannedRoom = () => {
+    const wallLengths = planWalls
+      .map((w) => {
+        const doors = w.openings
+          .filter((o) => o.kind === "door")
+          .reduce((n, o) => n + (o.unitWidth as number), 0);
+        return ((w.length as number) - doors) as Sixteenths;
+      })
+      .filter((len) => (len as number) > 0);
+    addRoomWithWalls("Planned room", wallLengths);
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -637,14 +670,25 @@ export function ElectricalForm({ system }: { system: UnitSystem }) {
       </section>
 
       <section className="bp-panel p-3">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <h3 className="bp-panel-title text-sm">Rooms</h3>
-          <button
-            onClick={addRoom}
-            className={`${chipBase} border-bp-line-faint text-bp-line-soft hover:border-bp-accent hover:text-bp-accent`}
-          >
-            + Room
-          </button>
+          <div className="flex gap-1.5">
+            {planWalls.length > 0 && (
+              <button
+                onClick={importPlannedRoom}
+                title="Create a room from the Room Planner's walls (doors subtracted from the floor line)"
+                className={`${chipBase} border-bp-line-faint text-bp-line-soft hover:border-bp-accent hover:text-bp-accent`}
+              >
+                ⤓ From planner
+              </button>
+            )}
+            <button
+              onClick={addRoom}
+              className={`${chipBase} border-bp-line-faint text-bp-line-soft hover:border-bp-accent hover:text-bp-accent`}
+            >
+              + Room
+            </button>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           {input.rooms.map((r) => (
