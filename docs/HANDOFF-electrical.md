@@ -1,5 +1,53 @@
 # Handoff: Electrical Module for the HomeReno App
 
+## ⚡ STATUS UPDATE 2026-07-16 (late) — phases 1–5 SHIPPED
+
+A full session ran the scoping interview (5 rounds, decisions in the project memory file
+`electrical-module-scope.md` and the approved plan) and built + verified + **deployed**:
+
+1. **Engine wave 1+2** (`app/src/lib/modules/electrical/`): whole-circuit model
+   (panel → breakers → circuits → devices), device catalog with per-config connection
+   steps for ALL families (duplex/GFCI/half-hot, single-pole incl. 404.2(C) loops,
+   3-way/4-way, dimmers, smart, fixtures/fans on lead splices, NEMA 240V), NEC 314.16
+   box fill in quarter-in³, loads (125% continuous) + one-breaker-or-two advisor,
+   Wake County validations (gauge/breaker, GFCI zones, NC-amended AFCI = bedrooms,
+   laundry/bath dedicated, 210.52 spacing via RoomFacts, panel slots, 120/240 poles),
+   schematic model, spool-packed shopping, verify-dead-first tasks. **129 electrical
+   tests** (golden fixtures = mudroom laundry + printing-room advisor + coverage runs;
+   catalog invariants: every conductor consumed exactly once, grounds always grounded,
+   box always fits, wire nuts sized).
+2. **Designer UI** at `/electrical` (scratch, localStorage) — pictorial in-box SVG w/
+   step-synced highlighting (`PictorialBox` + `deviceGlyphs`), circuit schematic,
+   forms (panel/rooms/circuits/devices/loads w/ presets), tabs (Connections/Steps/
+   Load & Advisor/Shopping/Code Notes), live warnings banner, framed-wall box markers
+   (`WallElevation markers` prop). Supabase: bound designs work module-aware
+   (`module_id: "electrical"`), "+ Electrical design" button on projects.
+3. **Troubleshoot wizard** at `/electrical/troubleshoot` — 36-node tree
+   (`data/troubleshootTree.ts`), breadcrumb rewind, device-context field notes
+   (saved onto DeviceInput.fieldNotes → shown on card + task detail).
+4. **Print** at `/electrical/print` — schematic + per-device diagrams + steps +
+   **panel directory label** (odd/even columns) + shopping. Wire colors are CSS
+   tokens (`--wire-*`) remapped by `.print-sheet` so white wires get outlines on paper.
+5. **Illustrations** in `app/public/steps/electrical/` (5 × 1400px JPEG, nano-banana-2
+   2K, every image inspected; wirenut one regenerated once for a wrong terminal).
+
+**NOT built yet:** Phase 6 (room-planner/framing integration: auto-fill RoomFacts from
+planned rooms, stud-aware box placement, cable routing w/ bore holes + nail plates
+NEC 300.4, drilling tasks; `DeviceInput.wallDesignId/xOnWall/heightAFF` are reserved
+and the minimal elevation marker already renders). Phase 7 (low-voltage electronics /
+smart-home builds — `system: "low-voltage"` seam reserved; own session per plan).
+Also excluded by scope choice: 3D, tracking hooks, panel-audit walkthrough.
+
+**Gotchas added this session:** browser-pane screenshots only capture at scrollY 0
+(verify below-the-fold via `get_page_text`/JS); React batching means JS-driven UI
+walks need one click per tick (async IIFE + ~120ms sleeps); zod v4 `.default({})`
+does NOT apply inner defaults (spell the full object); commits are LOCAL — push when
+Sebastian says so. Deploys of phases 3/5 are live on homereno-puce.vercel.app.
+
+---
+
+*Original scoping handoff below (historical — the interview + plan happened).*
+
 **Audience:** a fresh Claude Code session starting the ELECTRICAL trade module.
 **Date:** 2026-07-16. **Author:** previous session (built the app + framing module end-to-end).
 
