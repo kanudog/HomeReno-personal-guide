@@ -8,11 +8,12 @@ export const WIRE_COLORS: Record<
   ConductorColor,
   { stroke: string; halo?: string; label: string }
 > = {
-  black: { stroke: "#2b2b2b", halo: "rgba(232,242,252,0.55)", label: "black" },
-  red: { stroke: "#ef4444", label: "red" },
-  white: { stroke: "#e8f2fc", label: "white" },
-  bare: { stroke: "#d9903f", label: "bare copper" },
-  green: { stroke: "#10b981", label: "green" },
+  // tokens so the print sheet can remap (white wires need outlines on paper)
+  black: { stroke: "var(--wire-black)", halo: "var(--wire-black-halo)", label: "black" },
+  red: { stroke: "var(--wire-red)", label: "red" },
+  white: { stroke: "var(--wire-white)", halo: "var(--wire-white-halo)", label: "white" },
+  bare: { stroke: "var(--wire-bare)", label: "bare copper" },
+  green: { stroke: "var(--wire-green)", label: "green" },
 };
 
 export const SCREW_COLORS: Record<string, string> = {

@@ -30,6 +30,16 @@
   --member-sill: #c9a3ff;
   --member-corner: #4dd0c4;
   --member-blocking: #90a8c0;
+
+  /* Electrical wire palette — scoped to electrical SVG components */
+  --wire-black: #2b2b2b;
+  --wire-black-halo: rgba(232, 242, 252, 0.55);
+  --wire-white: #e8f2fc;
+  --wire-white-halo: transparent;
+  --wire-red: #ef4444;
+  --wire-bare: #d9903f;
+  --wire-green: #10b981;
+  --elec-box-fill: rgba(10, 33, 56, 0.55);
 }
 
 @theme inline {
@@ -113,6 +123,16 @@ body {
   --member-sill: #7c3aed;
   --member-corner: #0f766e;
   --member-blocking: #475569;
+
+  /* wire colors on white paper: white wires gain a dark outline */
+  --wire-black: #1c1c1c;
+  --wire-black-halo: transparent;
+  --wire-white: #fbfbfb;
+  --wire-white-halo: rgba(18, 49, 78, 0.8);
+  --wire-red: #c62828;
+  --wire-bare: #b06f24;
+  --wire-green: #15803d;
+  --elec-box-fill: #f4f7fa;
 
   background: #ffffff;
   color: var(--bp-line);

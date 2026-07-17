@@ -26,6 +26,7 @@ export function generateElectricalTasks(
     title: "Kill the power and verify dead",
     detail: `Switch off: ${breakerList || "the affected breakers"}. Then PROVE it at each box you'll open: non-contact tester on every wire first, then meter each conductor to ground and to neutral — expect 0V. Check your meter on a known-live outlet before and after (live-dead-live). If anything still reads hot, a second circuit shares the box — stop and find it.`,
     deviceIds: [],
+    illustrationId: "verify-dead",
     codeNoteIds: ["nc-wake-elec-verify-dead", "nc-wake-elec-permit"],
   });
 
@@ -87,6 +88,12 @@ export function generateElectricalTasks(
         circuitId: circuit.id,
         deviceIds: [plan.deviceId],
         diagramRef: { deviceId: plan.deviceId },
+        illustrationId:
+          plan.kind === "receptacle-gfci"
+            ? "gfci-line-load"
+            : plan.wirenuts.length > 0
+              ? "wirenut-pigtail"
+              : "strip-hook",
         codeNoteIds: config?.codeNoteIds,
       });
     }
@@ -106,6 +113,7 @@ export function generateElectricalTasks(
       title: "Land the breakers and label the directory",
       detail: `With the MAIN off and verified: ${lines}. Home-run black to the breaker terminal, white to the neutral bar, bare to the ground bar (GFCI/AFCI breakers: their coiled white pigtail goes to the neutral bar, circuit white to the breaker). Torque to the label spec. Fill in the panel directory before the cover goes back on.`,
       deviceIds: [],
+      illustrationId: "panel-breaker",
       codeNoteIds: ["nc-wake-elec-permit", "nc-wake-elec-labeling"],
     });
   }

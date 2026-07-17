@@ -127,6 +127,15 @@ export function TroubleshootWizard({
             </p>
           )}
           <p className="text-sm text-bp-line-soft">{node.instruction}</p>
+          {node.illustration && (
+            // eslint-disable-next-line @next/next/no-img-element -- static illustration
+            <img
+              src={node.illustration}
+              alt={`Illustration: ${node.title}`}
+              className="mt-3 w-full max-w-md rounded-sm border border-bp-line-faint"
+              loading="lazy"
+            />
+          )}
           {node.safety && (
             <p className="bp-dim mt-2 rounded-sm border-l-4 p-2 text-[12px]" style={{ borderLeftColor: "var(--bp-danger)", color: "var(--bp-danger)" }}>
               ⚡ {node.safety}

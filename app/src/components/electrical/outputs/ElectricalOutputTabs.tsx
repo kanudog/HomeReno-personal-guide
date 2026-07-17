@@ -27,6 +27,15 @@ const KIND_COLOR: Record<string, string> = {
   code: "var(--bp-accent)",
 };
 
+/** Generated illustrations (see /public/steps/electrical). */
+const STEP_IMAGES: Record<string, string> = {
+  "verify-dead": "/steps/electrical/verify-dead.jpg",
+  "strip-hook": "/steps/electrical/strip-hook.jpg",
+  "wirenut-pigtail": "/steps/electrical/wirenut-pigtail.jpg",
+  "gfci-line-load": "/steps/electrical/gfci-line-load.jpg",
+  "panel-breaker": "/steps/electrical/panel-breaker.jpg",
+};
+
 function PctBar({ pct, pass }: { pct: number; pass: boolean }) {
   return (
     <div className="h-2 w-full max-w-56 overflow-hidden rounded-full bg-bp-paper-raised">
@@ -164,6 +173,15 @@ function StepsTab({ output }: { output: ElectricalOutput }) {
                 )}
               </p>
               <p className="mt-0.5 text-sm text-bp-line-soft">{t.detail}</p>
+              {t.illustrationId && STEP_IMAGES[t.illustrationId] && (
+                // eslint-disable-next-line @next/next/no-img-element -- static illustration
+                <img
+                  src={STEP_IMAGES[t.illustrationId]}
+                  alt={`Illustration: ${t.title}`}
+                  className="mt-3 w-full max-w-md rounded-sm border border-bp-line-faint"
+                  loading="lazy"
+                />
+              )}
               {notes.map((n) => (
                 <div
                   key={n!.id}

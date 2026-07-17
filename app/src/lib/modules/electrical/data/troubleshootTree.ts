@@ -86,6 +86,7 @@ export const TROUBLESHOOT_TREE: TreeNode[] = [
     instruction:
       "Test every insulated conductor to ground, then hot-candidates to the white bundle. What do you read?",
     safety: "Hold probes by the finger guards — treat everything as live until this test says otherwise.",
+    illustration: "/steps/electrical/verify-dead.jpg",
     options: [
       { label: "~120V somewhere", next: "c-vd-still-hot" },
       { label: "0V everywhere", next: "vd-3" },
@@ -153,6 +154,7 @@ export const TROUBLESHOOT_TREE: TreeNode[] = [
     title: "Each wire to ground",
     setup: "Dial to V~. Black probe on the bare ground (or grounded metal box), red probe on each insulated wire.",
     instruction: "Which wires read ~120V to ground?",
+    illustration: "/steps/electrical/verify-dead.jpg",
     options: [
       { label: "Exactly one", next: "c-ih-found" },
       { label: "More than one", next: "ih-2" },

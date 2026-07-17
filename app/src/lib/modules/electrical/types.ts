@@ -343,6 +343,8 @@ export interface ElectricalTask {
   deviceIds: string[];
   /** Ties a task to a device's connection steps for diagram highlighting. */
   diagramRef?: { deviceId: string };
+  /** Key into the generated step illustrations (public/steps/electrical). */
+  illustrationId?: string;
   codeNoteIds?: string[];
 }
 

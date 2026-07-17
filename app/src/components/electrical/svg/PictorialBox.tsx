@@ -148,7 +148,7 @@ export function PictorialBox({
     <div>
       <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Wiring diagram: ${plan.displayName}`} className="w-full">
         {/* the box */}
-        <rect x={4} y={30} width={W - 8} height={H - 66} rx={10} fill="rgba(10,33,56,0.55)" stroke="var(--bp-line-faint)" strokeWidth={2} />
+        <rect x={4} y={30} width={W - 8} height={H - 66} rx={10} fill="var(--elec-box-fill)" stroke="var(--bp-line-faint)" strokeWidth={2} />
         <text x={18} y={20} fontSize={13} fill="var(--bp-line)" style={{ fontFamily: "var(--font-geist-mono)" }}>
           {plan.displayName} — {plan.configLabel}
         </text>

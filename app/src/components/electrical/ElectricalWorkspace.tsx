@@ -82,6 +82,12 @@ export function ElectricalWorkspace({
           >
             Troubleshoot
           </Link>
+          <Link
+            href="/electrical/print"
+            className="bp-dim rounded-sm border border-bp-accent px-3 py-1.5 text-[11px] uppercase tracking-widest text-bp-accent transition-colors hover:bg-bp-accent hover:text-bp-paper-deep"
+          >
+            Print Circuit Sheet
+          </Link>
           <UnitToggle />
         </div>
       </header>
