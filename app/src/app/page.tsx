@@ -21,7 +21,7 @@ const modules = [
     id: "electrical",
     title: "Electrical",
     description:
-      "Whole circuits, terminal-by-terminal wiring diagrams, box fill & breaker checks, and a one-breaker-or-two load advisor.",
+      "Whole circuits, terminal-by-terminal wiring diagrams, box fill & breaker checks, load advisor, multimeter troubleshooter, stud-aware cable routing, and an ESP32 smart-home lab.",
     href: "/electrical",
     ready: true,
   },

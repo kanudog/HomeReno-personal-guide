@@ -60,6 +60,12 @@ export function ElectricalWorkspace({
         </div>
         <div className="flex items-center gap-3">
           <Link
+            href="/electrical/low-voltage"
+            className="bp-dim rounded-sm border border-bp-line-faint px-3 py-1.5 text-[11px] uppercase tracking-widest text-bp-line-soft transition-colors hover:border-bp-accent hover:text-bp-accent"
+          >
+            Low-Voltage Lab
+          </Link>
+          <Link
             href="/electrical/troubleshoot"
             className="bp-dim rounded-sm border border-bp-line-faint px-3 py-1.5 text-[11px] uppercase tracking-widest text-bp-line-soft transition-colors hover:border-bp-accent hover:text-bp-accent"
           >
