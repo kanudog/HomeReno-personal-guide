@@ -119,6 +119,8 @@ export interface DeviceInput {
   location?: "wall" | "counter";
   /** Estimated length of the cable segment FEEDING this device, in feet. */
   feedLengthFt?: number;
+  /** What you found in the field (troubleshoot wizard writes here). */
+  fieldNotes?: string;
   // Reserved for the framing/room-planner integration phase:
   wallDesignId?: string;
   xOnWall?: Sixteenths;

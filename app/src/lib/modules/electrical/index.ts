@@ -71,6 +71,7 @@ export const deviceInputSchema = z.object({
   roomId: z.string().optional(),
   location: z.enum(["wall", "counter"]).optional(),
   feedLengthFt: z.number().int().positive().optional(),
+  fieldNotes: z.string().optional(),
   wallDesignId: z.string().optional(),
   xOnWall: sixteenthsSchema.optional(),
   heightAFF: sixteenthsSchema.optional(),

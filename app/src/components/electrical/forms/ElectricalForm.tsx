@@ -309,6 +309,31 @@ function DeviceCard({
       </div>
 
       {config && <p className="bp-dim mt-1.5 text-[10px] text-bp-line-soft">{config.description}</p>}
+
+      <div className="mt-1.5 flex flex-wrap items-center gap-2">
+        <a
+          href={`/electrical/troubleshoot?device=${device.id}&circuit=${circuit.id}`}
+          onClick={(e) => e.stopPropagation()}
+          className="bp-dim text-[10px] uppercase tracking-widest text-bp-line-soft underline hover:text-bp-accent"
+        >
+          Not sure which wire is hot? →
+        </a>
+        {device.fieldNotes && (
+          <span className="bp-dim flex items-center gap-1 rounded-sm bg-bp-paper-raised/60 px-2 py-0.5 text-[10px] text-bp-ok">
+            📋 {device.fieldNotes}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                patch({ fieldNotes: undefined });
+              }}
+              className="ml-1 text-bp-line-soft hover:text-bp-danger"
+              title="Clear field notes"
+            >
+              ✕
+            </button>
+          </span>
+        )}
+      </div>
     </div>
   );
 }

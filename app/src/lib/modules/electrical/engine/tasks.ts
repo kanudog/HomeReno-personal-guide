@@ -76,7 +76,10 @@ export function generateElectricalTasks(
       const stepsText = plan.connections
         .map((c, i) => `${i + 1}) ${c.instruction}`)
         .join(" ");
-      const notes = plan.notes.length > 0 ? ` NOTE: ${plan.notes.join(" ")}` : "";
+      const fieldNotes = deviceById.get(plan.deviceId)?.fieldNotes;
+      const notes =
+        (plan.notes.length > 0 ? ` NOTE: ${plan.notes.join(" ")}` : "") +
+        (fieldNotes ? ` FIELD NOTES: ${fieldNotes}` : "");
       tasks.push({
         seq: seq++,
         title: `Wire ${plan.displayName} — ${plan.configLabel}`,
