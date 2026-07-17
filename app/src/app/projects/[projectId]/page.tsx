@@ -6,7 +6,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { inches } from "@/lib/units";
 import type { WallInput } from "@/lib/modules/framing/types";
+import type { ElectricalInput } from "@/lib/modules/electrical/types";
 import { ENGINE_VERSION } from "@/lib/modules/framing";
+import { ENGINE_VERSION as ELECTRICAL_ENGINE_VERSION } from "@/lib/modules/electrical";
 
 const NEW_WALL: WallInput = {
   length: inches(120),
@@ -17,6 +19,25 @@ const NEW_WALL: WallInput = {
   loadBearing: false,
     bottomPlatePT: true,
   openings: [],
+};
+
+const NEW_ELECTRICAL: ElectricalInput = {
+  system: "mains",
+  panel: { label: "Main panel", mainAmps: 200, slots: 40, existing: [] },
+  rooms: [],
+  circuits: [
+    {
+      id: "circuit-1",
+      name: "Circuit 1",
+      existing: false,
+      breakerAmps: 15,
+      poles: 1,
+      breakerType: "standard",
+      cable: "14/2",
+      devices: [],
+      loads: [],
+    },
+  ],
 };
 
 interface DesignRow {
@@ -58,15 +79,18 @@ export default function ProjectPage({ params }: { params: Promise<{ projectId: s
   });
 
   const createDesign = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (moduleId: "framing" | "electrical") => {
       const { data, error } = await supabase
         .from("designs")
         .insert({
           project_id: projectId,
-          module_id: "framing",
-          name: `Wall ${(designs.data?.length ?? 0) + 1}`,
-          input: NEW_WALL,
-          engine_version: ENGINE_VERSION,
+          module_id: moduleId,
+          name:
+            moduleId === "framing"
+              ? `Wall ${(designs.data?.length ?? 0) + 1}`
+              : `Circuits ${(designs.data?.length ?? 0) + 1}`,
+          input: moduleId === "framing" ? NEW_WALL : NEW_ELECTRICAL,
+          engine_version: moduleId === "framing" ? ENGINE_VERSION : ELECTRICAL_ENGINE_VERSION,
         })
         .select("id")
         .single();
@@ -91,17 +115,26 @@ export default function ProjectPage({ params }: { params: Promise<{ projectId: s
           </Link>
           <h1 className="bp-panel-title text-xl">{project.data?.name ?? "…"}</h1>
         </div>
-        <button
-          onClick={() => createDesign.mutate()}
-          disabled={createDesign.isPending}
-          className="bp-dim rounded-sm border border-bp-accent px-4 py-2 text-[11px] uppercase tracking-widest text-bp-accent transition-colors enabled:hover:bg-bp-accent enabled:hover:text-bp-paper-deep disabled:opacity-40"
-        >
-          + Wall design
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => createDesign.mutate("framing")}
+            disabled={createDesign.isPending}
+            className="bp-dim rounded-sm border border-bp-accent px-4 py-2 text-[11px] uppercase tracking-widest text-bp-accent transition-colors enabled:hover:bg-bp-accent enabled:hover:text-bp-paper-deep disabled:opacity-40"
+          >
+            + Wall design
+          </button>
+          <button
+            onClick={() => createDesign.mutate("electrical")}
+            disabled={createDesign.isPending}
+            className="bp-dim rounded-sm border border-bp-accent px-4 py-2 text-[11px] uppercase tracking-widest text-bp-accent transition-colors enabled:hover:bg-bp-accent enabled:hover:text-bp-paper-deep disabled:opacity-40"
+          >
+            + Electrical design
+          </button>
+        </div>
       </header>
 
       <section className="mb-8">
-        <h2 className="bp-panel-title mb-3 text-sm">Framing Designs</h2>
+        <h2 className="bp-panel-title mb-3 text-sm">Designs</h2>
         <div className="flex flex-col gap-3">
           {designs.data?.map((d) => (
             <Link

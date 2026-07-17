@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { computeFraming, ENGINE_VERSION, parseWallInput } from "@/lib/modules/framing";
 import { DesignerWorkspace } from "@/components/DesignerWorkspace";
+import { ElectricalBoundDesign } from "@/components/electrical/ElectricalBoundDesign";
 import { useEditor } from "@/stores/editor";
 
 /**
@@ -29,7 +30,7 @@ export default function BoundDesignPage({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("designs")
-        .select("id, name, input, engine_version")
+        .select("id, name, module_id, input, engine_version")
         .eq("id", designId)
         .single();
       if (error) throw error;
@@ -38,9 +39,10 @@ export default function BoundDesignPage({
     staleTime: Infinity,
   });
 
-  // hydrate the editor store once the row arrives
+  // hydrate the editor store once the row arrives (framing rows only —
+  // other modules render their own bound workspace below)
   useEffect(() => {
-    if (!design.data) return;
+    if (!design.data || design.data.module_id !== "framing") return;
     try {
       const parsed = parseWallInput(design.data.input);
       lastSavedRef.current = JSON.stringify(parsed);
@@ -87,6 +89,17 @@ export default function BoundDesignPage({
   }
   if (design.error) {
     return <p className="p-8 text-bp-danger">Couldn&apos;t load design: {String(design.error)}</p>;
+  }
+
+  if (design.data?.module_id === "electrical") {
+    return (
+      <ElectricalBoundDesign
+        projectId={projectId}
+        designId={designId}
+        designName={design.data.name ?? "Electrical design"}
+        initialInput={design.data.input}
+      />
+    );
   }
 
   return (

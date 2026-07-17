@@ -21,9 +21,9 @@ const modules = [
     id: "electrical",
     title: "Electrical",
     description:
-      "Device-specific wiring diagrams, multimeter troubleshooting, box fill & breaker sizing.",
-    href: "#",
-    ready: false,
+      "Whole circuits, terminal-by-terminal wiring diagrams, box fill & breaker checks, and a one-breaker-or-two load advisor.",
+    href: "/electrical",
+    ready: true,
   },
   {
     id: "plumbing",

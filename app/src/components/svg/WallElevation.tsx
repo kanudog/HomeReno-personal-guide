@@ -22,12 +22,25 @@ export const ROLE_COLOR: Record<MemberRole, string> = {
   blocking: "var(--member-blocking)",
 };
 
+/** Trade-module overlay (e.g. an electrical box) drawn on the elevation. */
+export interface WallMarker {
+  /** Left edge from wall start. */
+  x: Sixteenths;
+  /** Bottom edge above the subfloor (height AFF). */
+  y: Sixteenths;
+  w: Sixteenths;
+  h: Sixteenths;
+  label: string;
+}
+
 export interface WallElevationProps {
   layout: StudLayout;
   system?: UnitSystem;
   /** Show member ID labels (editor) or keep clean (print thumbnails). */
   showIds?: boolean;
   className?: string;
+  /** Overlay markers from other trade modules (electrical boxes…). */
+  markers?: WallMarker[];
   /** Extra SVG children rendered in model space (canvas overlays). */
   children?: React.ReactNode;
 }
@@ -37,6 +50,7 @@ export function WallElevation({
   system = "imperial",
   showIds = false,
   className,
+  markers,
   children,
 }: WallElevationProps) {
   const L = layout.input.length as number;
@@ -168,6 +182,34 @@ export function WallElevation({
           label={`${d.labelPrefix ?? ""}${fmt((d.to - d.from) as Sixteenths)}${d.labelSuffix ?? ""}`}
         />
       ))}
+
+      {/* trade-module markers (electrical boxes, …) */}
+      {markers?.map((m, i) => {
+        const my = sy((m.y as number) + (m.h as number));
+        return (
+          <g key={`marker-${i}`}>
+            <rect
+              x={m.x as number}
+              y={my}
+              width={m.w as number}
+              height={m.h as number}
+              fill="var(--bp-accent)"
+              fillOpacity={0.22}
+              stroke="var(--bp-accent)"
+              strokeWidth={fs * 0.1}
+            />
+            <text
+              x={(m.x as number) + (m.w as number) / 2}
+              y={my - fs * 0.5}
+              fontSize={fs * 0.62}
+              fill="var(--bp-accent)"
+              textAnchor="middle"
+            >
+              {m.label} · {fmt(m.y)} AFF
+            </text>
+          </g>
+        );
+      })}
 
       {children}
     </svg>
