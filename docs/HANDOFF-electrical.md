@@ -31,12 +31,24 @@ A full session ran the scoping interview (5 rounds, decisions in the project mem
 5. **Illustrations** in `app/public/steps/electrical/` (5 × 1400px JPEG, nano-banana-2
    2K, every image inspected; wirenut one regenerated once for a wrong terminal).
 
-**NOT built yet:** Phase 6 (room-planner/framing integration: auto-fill RoomFacts from
-planned rooms, stud-aware box placement, cable routing w/ bore holes + nail plates
-NEC 300.4, drilling tasks; `DeviceInput.wallDesignId/xOnWall/heightAFF` are reserved
-and the minimal elevation marker already renders). Phase 7 (low-voltage electronics /
-smart-home builds — `system: "low-voltage"` seam reserved; own session per plan).
-Also excluded by scope choice: 3D, tracking hooks, panel-audit walkthrough.
+**UPDATE (2026-07-17): phases 6 + 7 also SHIPPED.**
+Phase 6 (opt-in): `engine/wallRouting.ts` snaps device boxes against the nearest
+mountable stud face, plans centered 3/4" bore holes through every crossed vertical
+(cripples included), dedupes shared holes, warns on opening collisions (NEC 300.4
+nail-plate note). Wall Routing panel renders per referenced wall — the framing
+designer wall OR any room-planner wall (device wall selector) — with entry-side +
+drill-height controls. Rooms panel gained "⤓ From planner" (RoomFacts from drawn
+walls, door widths subtracted). All opt-in: renders only when devices are marked.
+Phase 7: Low-Voltage Lab at `/electrical/low-voltage` — 16-component Class-2
+catalog + 4 wired ESP32/ESPHome recipes (motion shop light, door sensor, WS2812
+accent, relay-switched 12V load) with component diagrams, click-to-highlight wire
+tables, power budgets vs the supply's 80% ceiling, parts lists (Amazon/AliExpress),
+copyable ESPHome YAML. 243 tests total; everything deployed.
+
+**Still excluded by scope choice:** 3D for electrical, tracking hooks,
+panel-audit walkthrough, mains-switching relay recipes (deliberate — separate
+project with enclosure/separation rules). Possible future: LV recipes as saved
+designs, cable-length estimation from routed walls into shopping, more recipes.
 
 **Gotchas added this session:** browser-pane screenshots only capture at scrollY 0
 (verify below-the-fold via `get_page_text`/JS); React batching means JS-driven UI
