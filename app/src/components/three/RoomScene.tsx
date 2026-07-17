@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import { Edges, OrbitControls } from "@react-three/drei";
+import { Edges, OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { layoutToSolids } from "@/lib/three/solids";
 import { dirRotationY, type RoomResult } from "@/lib/modules/framing/room";
@@ -24,6 +24,7 @@ export function RoomScene({
   onSelectWall: (id: string) => void;
 }) {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const [ortho, setOrtho] = useState(false);
 
   const wallsWithSolids = useMemo(
     () =>
@@ -95,10 +96,18 @@ export function RoomScene({
         className="overflow-hidden rounded-sm border border-bp-line-faint"
         style={{ height: "min(60vh, 640px)", touchAction: "none", background: "var(--bp-paper-deep)" }}
       >
-        <Canvas
-          camera={{ position: initialCam, fov: 42, near: 1, far: 8000 }}
-          gl={{ preserveDrawingBuffer: true, antialias: true }}
-        >
+        <Canvas gl={{ preserveDrawingBuffer: true, antialias: true }}>
+          {ortho ? (
+            <OrthographicCamera
+              makeDefault
+              position={initialCam}
+              zoom={Math.max(1, 400 / (radius * 1.8))}
+              near={-12000}
+              far={12000}
+            />
+          ) : (
+            <PerspectiveCamera makeDefault position={initialCam} fov={42} near={1} far={8000} />
+          )}
           <ambientLight intensity={0.55} />
           <directionalLight position={[radius, radius * 2, radius]} intensity={1.1} />
           <directionalLight position={[-radius, radius, -radius]} intensity={0.4} />
@@ -131,6 +140,7 @@ export function RoomScene({
             position={[center.x, -1, center.z]}
           />
           <OrbitControls
+            key={ortho ? "ortho" : "persp"}
             ref={controlsRef}
             target={[center.x, center.y, center.z]}
             enableDamping
@@ -152,6 +162,11 @@ export function RoomScene({
           <CubeButton label="S" onClick={() => snapTo(FACES[2]!.v)} />
           <span />
         </div>
+        <CubeButton
+          label={ortho ? "Ortho" : "Persp"}
+          onClick={() => setOrtho((v) => !v)}
+          accent={ortho}
+        />
         <div className="mt-1 flex max-w-44 flex-wrap justify-end gap-1">
           {room.walls.map((w) => (
             <button

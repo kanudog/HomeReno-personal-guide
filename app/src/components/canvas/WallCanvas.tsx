@@ -28,6 +28,14 @@ interface ActivePointer {
   clientY: number;
 }
 
+/** Measure point in model coords (y up from the subfloor). */
+interface MeasurePoint {
+  x: number;
+  y: number;
+  /** Landed on a framing corner (drawn as a captured square). */
+  snapped: boolean;
+}
+
 export interface WallCanvasProps {
   system: UnitSystem;
 }
@@ -48,6 +56,7 @@ export function WallCanvas({ system }: WallCanvasProps) {
   const canRedo = useStore(temporal, (s) => s.futureStates.length > 0);
 
   const svgHostRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [view, setView] = useState<View>({ zoom: 1, tx: 0, ty: 0 });
 
   const dragRef = useRef<DragState | null>(null);
@@ -57,18 +66,35 @@ export function WallCanvas({ system }: WallCanvasProps) {
     setDragState(d);
   };
   const pointersRef = useRef<Map<number, ActivePointer>>(new Map());
-  const pinchStartRef = useRef<{ dist: number; zoom: number } | null>(null);
   const movedRef = useRef(false);
 
   // inspect + measure
   const [info, setInfo] = useState<{ id: string; label: string; length: Sixteenths } | null>(null);
   const [measureMode, setMeasureMode] = useState(false);
-  const [measurePts, setMeasurePts] = useState<{ x: number; y: number }[]>([]);
+  const [measurePts, setMeasurePts] = useState<MeasurePoint[]>([]);
   const measureModeRef = useRef(false);
+  const measureDragRef = useRef<{
+    index: number;
+    startPt: MeasurePoint;
+    startPointer: { x: number; y: number };
+  } | null>(null);
   const toggleMeasure = () => {
     measureModeRef.current = !measureModeRef.current;
     setMeasureMode(measureModeRef.current);
     setMeasurePts([]);
+  };
+
+  /** Zoom about a container-relative anchor: the point under it stays put. */
+  const zoomAt = (anchorX: number, anchorY: number, factor: number) => {
+    setView((v) => {
+      const zoom = Math.min(8, Math.max(0.4, v.zoom * factor));
+      const k = zoom / v.zoom;
+      return {
+        zoom,
+        tx: anchorX - k * (anchorX - v.tx),
+        ty: anchorY - k * (anchorY - v.ty),
+      };
+    });
   };
 
   const effectiveWall = useMemo(() => {
@@ -106,6 +132,45 @@ export function WallCanvas({ system }: WallCanvasProps) {
     return { x: pt.x, y: pt.y, pxPerUnit: ctm.a };
   };
 
+  const wallH = baseOutput ? (baseOutput.layout.input.height as number) : 0;
+  const fsModel = baseOutput
+    ? Math.max(28, Math.round(Math.max(baseOutput.layout.input.length as number, wallH) * 0.02))
+    : 28;
+  /** Ring-handle radius in model units — roughly constant on screen. */
+  const ringR = (fsModel * 2.1) / view.zoom;
+
+  // corner targets for measure snapping: every member + RO corner
+  const cornerTargets = useMemo(() => {
+    if (!baseOutput) return [] as { x: number; y: number }[];
+    const pts: { x: number; y: number }[] = [];
+    const push = (x: number, y: number, w: number, h: number) => {
+      pts.push({ x, y }, { x: x + w, y }, { x, y: y + h }, { x: x + w, y: y + h });
+    };
+    for (const m of baseOutput.layout.members) {
+      push(m.x as number, m.y as number, m.w as number, m.h as number);
+    }
+    for (const ro of baseOutput.layout.roughOpenings) {
+      push(ro.x as number, ro.y as number, ro.width as number, ro.height as number);
+    }
+    return pts;
+  }, [baseOutput]);
+
+  const snapCorner = (mx: number, my: number, tol: number) => {
+    let best: { x: number; y: number; d: number } | null = null;
+    for (const p of cornerTargets) {
+      const d = Math.hypot(p.x - mx, p.y - my);
+      if (d <= tol && (best === null || d < best.d)) best = { ...p, d };
+    }
+    return best;
+  };
+
+  const toMeasurePoint = (mx: number, my: number, tol: number): MeasurePoint => {
+    const snap = snapCorner(mx, my, tol);
+    return snap
+      ? { x: snap.x, y: snap.y, snapped: true }
+      : { x: Math.round(mx), y: Math.round(my), snapped: false };
+  };
+
   const openingAtPoint = (mx: number, my: number): string | null => {
     if (!baseOutput) return null;
     const H = baseOutput.layout.input.height as number;
@@ -134,17 +199,28 @@ export function WallCanvas({ system }: WallCanvasProps) {
     movedRef.current = false;
 
     if (pointersRef.current.size === 2) {
-      const [a, b] = [...pointersRef.current.values()];
-      pinchStartRef.current = {
-        dist: Math.hypot(a!.clientX - b!.clientX, a!.clientY - b!.clientY),
-        zoom: view.zoom,
-      };
       setDrag(null); // second finger cancels an opening drag
+      measureDragRef.current = null;
       return;
     }
 
     const pt = modelPointFromClient(e.clientX, e.clientY);
     if (!pt) return;
+
+    if (measureModeRef.current) {
+      // grab a measure point by its ring handle — finger stays off-center
+      const my = wallH - pt.y;
+      const idx = measurePts.findIndex((p) => Math.hypot(p.x - pt.x, p.y - my) <= ringR * 1.3);
+      if (idx >= 0) {
+        measureDragRef.current = {
+          index: idx,
+          startPt: measurePts[idx]!,
+          startPointer: { x: pt.x, y: my },
+        };
+      }
+      return; // measure mode never drags openings
+    }
+
     const hit = openingAtPoint(pt.x, pt.y);
     if (hit) {
       const opening = wall.openings.find((o) => o.id === hit);
@@ -166,13 +242,45 @@ export function WallCanvas({ system }: WallCanvasProps) {
     tracked.clientX = e.clientX;
     tracked.clientY = e.clientY;
 
-    // pinch zoom
-    if (pointersRef.current.size === 2 && pinchStartRef.current) {
-      const [a, b] = [...pointersRef.current.values()];
-      const dist = Math.hypot(a!.clientX - b!.clientX, a!.clientY - b!.clientY);
-      const scale = dist / pinchStartRef.current.dist;
-      const zoom = Math.min(8, Math.max(0.4, pinchStartRef.current.zoom * scale));
-      setView((v) => ({ ...v, zoom }));
+    // pinch: zoom about the finger midpoint + pan with it (incremental)
+    if (pointersRef.current.size === 2) {
+      const other = [...pointersRef.current.values()].find((p) => p.id !== e.pointerId);
+      if (!other) return;
+      movedRef.current = true;
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const prevMid = { x: (prev.x + other.clientX) / 2, y: (prev.y + other.clientY) / 2 };
+      const newMid = { x: (e.clientX + other.clientX) / 2, y: (e.clientY + other.clientY) / 2 };
+      const prevDist = Math.hypot(prev.x - other.clientX, prev.y - other.clientY);
+      const newDist = Math.hypot(e.clientX - other.clientX, e.clientY - other.clientY);
+      if (prevDist < 1) return;
+      setView((v) => {
+        const zoom = Math.min(8, Math.max(0.4, v.zoom * (newDist / prevDist)));
+        const k = zoom / v.zoom;
+        const ax = prevMid.x - rect.left;
+        const ay = prevMid.y - rect.top;
+        return {
+          zoom,
+          tx: ax - k * (ax - v.tx) + (newMid.x - prevMid.x),
+          ty: ay - k * (ay - v.ty) + (newMid.y - prevMid.y),
+        };
+      });
+      return;
+    }
+
+    // fine-adjust a measure point via its ring handle
+    const md = measureDragRef.current;
+    if (md) {
+      const pt = modelPointFromClient(e.clientX, e.clientY);
+      if (!pt) return;
+      movedRef.current = true;
+      const my = wallH - pt.y;
+      const raw = {
+        x: md.startPt.x + (pt.x - md.startPointer.x),
+        y: md.startPt.y + (my - md.startPointer.y),
+      };
+      const next = toMeasurePoint(raw.x, raw.y, 10 / pt.pxPerUnit);
+      setMeasurePts((pts) => pts.map((p, i) => (i === md.index ? next : p)));
       return;
     }
 
@@ -215,7 +323,6 @@ export function WallCanvas({ system }: WallCanvasProps) {
 
   const endPointer = (e: React.PointerEvent<HTMLDivElement>) => {
     pointersRef.current.delete(e.pointerId);
-    if (pointersRef.current.size < 2) pinchStartRef.current = null;
     const d = dragRef.current;
 
     // a press-and-release without movement is a tap
@@ -225,7 +332,7 @@ export function WallCanvas({ system }: WallCanvasProps) {
         const H = baseOutput.layout.input.height as number;
         const modelY = H - pt.y;
         if (measureModeRef.current) {
-          const p = { x: Math.round(pt.x), y: Math.round(modelY) };
+          const p = toMeasurePoint(pt.x, modelY, 14 / pt.pxPerUnit);
           setMeasurePts((pts) => (pts.length >= 2 ? [p] : [...pts, p]));
         } else {
           const m = memberAtPoint(pt.x, modelY);
@@ -234,6 +341,7 @@ export function WallCanvas({ system }: WallCanvasProps) {
       }
     }
 
+    measureDragRef.current = null;
     if (d) {
       if (d.snap && movedRef.current) {
         updateOpening(d.openingId, { offset: d.snap.offset as Sixteenths });
@@ -244,8 +352,10 @@ export function WallCanvas({ system }: WallCanvasProps) {
 
   const onWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     e.preventDefault();
+    const rect = containerRef.current?.getBoundingClientRect();
     const factor = e.deltaY > 0 ? 0.92 : 1.08;
-    setView((v) => ({ ...v, zoom: Math.min(8, Math.max(0.4, v.zoom * factor)) }));
+    if (rect) zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
+    else setView((v) => ({ ...v, zoom: Math.min(8, Math.max(0.4, v.zoom * factor)) }));
   };
 
   if (!output) {
@@ -275,9 +385,9 @@ export function WallCanvas({ system }: WallCanvasProps) {
             ? `${formatLength(drag.snap.offset as Sixteenths, { system, feetInches: true })} from wall left${drag.snap.kind !== "grid" ? ` · ${snapLabel(drag.snap.kind)}` : ""}`
             : measureMode
               ? measurePts.length === 0
-                ? "tap the first point"
+                ? "tap the first point — it snaps to framing corners"
                 : measurePts.length === 1
-                  ? "tap the second point"
+                  ? "tap the second point · drag a ring's edge to fine-tune"
                   : measureLabel(measurePts, system)
               : info
                 ? `${info.id} · ${info.label} · ${formatLength(info.length, { system, feetInches: true })} — tap empty space to dismiss`
@@ -286,6 +396,7 @@ export function WallCanvas({ system }: WallCanvasProps) {
       </div>
 
       <div
+        ref={containerRef}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endPointer}
@@ -321,6 +432,7 @@ export function WallCanvas({ system }: WallCanvasProps) {
               guideX={drag?.snap?.guideX ?? null}
               infoMemberId={info?.id ?? null}
               measurePts={measurePts}
+              ringR={ringR}
               system={system}
             />
           </WallElevation>
@@ -366,13 +478,15 @@ function CanvasOverlay({
   guideX,
   infoMemberId,
   measurePts,
+  ringR,
   system,
 }: {
   layout: StudLayout;
   selectedOpeningId: string | null;
   guideX: number | null;
   infoMemberId: string | null;
-  measurePts: { x: number; y: number }[];
+  measurePts: MeasurePoint[];
+  ringR: number;
   system: UnitSystem;
 }) {
   const H = layout.input.height as number;
@@ -436,9 +550,9 @@ function CanvasOverlay({
         />
       )}
 
-      {/* measure points + line + label */}
+      {/* measure points: crosshair + dashed ring drag handle */}
       {measurePts.map((p, i) => (
-        <circle key={i} cx={p.x} cy={H - p.y} r={fs * 0.28} fill="var(--bp-ok)" />
+        <MeasureMarker key={i} x={p.x} y={H - p.y} r={ringR} snapped={p.snapped} />
       ))}
       {measurePts.length === 2 && (
         <g>
@@ -471,6 +585,38 @@ function CanvasOverlay({
         </g>
       )}
     </>
+  );
+}
+
+/**
+ * Crosshair inside a dashed ring: the ring is the drag handle, so a finger
+ * on it never covers the exact point. A small square marks a captured
+ * framing corner.
+ */
+function MeasureMarker({ x, y, r, snapped }: { x: number; y: number; r: number; snapped: boolean }) {
+  const gap = r * 0.14; // hairline gap so the exact point stays visible
+  const hair = r * 0.82;
+  const sw = r * 0.045;
+  return (
+    <g style={{ cursor: "grab" }}>
+      <circle cx={x} cy={y} r={r} fill="var(--bp-ok)" fillOpacity={0.05} stroke="var(--bp-ok)" strokeWidth={sw * 1.4} strokeDasharray={`${r * 0.16} ${r * 0.12}`} />
+      <line x1={x - hair} y1={y} x2={x - gap} y2={y} stroke="var(--bp-ok)" strokeWidth={sw} />
+      <line x1={x + gap} y1={y} x2={x + hair} y2={y} stroke="var(--bp-ok)" strokeWidth={sw} />
+      <line x1={x} y1={y - hair} x2={x} y2={y - gap} stroke="var(--bp-ok)" strokeWidth={sw} />
+      <line x1={x} y1={y + gap} x2={x} y2={y + hair} stroke="var(--bp-ok)" strokeWidth={sw} />
+      <circle cx={x} cy={y} r={sw * 1.5} fill="var(--bp-ok)" />
+      {snapped && (
+        <rect
+          x={x - r * 0.24}
+          y={y - r * 0.24}
+          width={r * 0.48}
+          height={r * 0.48}
+          fill="none"
+          stroke="var(--bp-ok)"
+          strokeWidth={sw}
+        />
+      )}
+    </g>
   );
 }
 

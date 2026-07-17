@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { Edges, Line, OrbitControls } from "@react-three/drei";
+import { Edges, Line, OrbitControls, OrthographicCamera, PerspectiveCamera } from "@react-three/drei";
 import type { MemberRole, StudLayout } from "@/lib/modules/framing/types";
 import { ASSEMBLY_STEPS } from "@/lib/modules/framing/engine/tasks";
 import { formatLength, type Sixteenths } from "@/lib/units";
@@ -93,6 +93,7 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
   const [measureMode, setMeasureMode] = useState(false);
   const [measurePts, setMeasurePts] = useState<[number, number, number][]>([]);
   const measureRef = useRef(false);
+  const [ortho, setOrtho] = useState(false);
 
   const L = (layout.input.length as number) / 16;
   const H = (layout.input.height as number) / 16;
@@ -158,6 +159,15 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
         </label>
         <div className="flex flex-wrap items-center gap-2">
           <button
+            onClick={() => setOrtho((v) => !v)}
+            title="Toggle orthographic / perspective projection"
+            className={`bp-dim rounded-sm border px-3 py-1.5 text-[11px] uppercase tracking-widest transition-colors ${
+              ortho ? "border-bp-ok text-bp-ok" : "border-bp-line-faint text-bp-line-soft"
+            }`}
+          >
+            {ortho ? "Ortho" : "Persp"}
+          </button>
+          <button
             onClick={() => setShowNails((v) => !v)}
             className={`bp-dim rounded-sm border px-3 py-1.5 text-[11px] uppercase tracking-widest transition-colors ${
               showNails ? "border-bp-ok text-bp-ok" : "border-bp-line-faint text-bp-line-soft"
@@ -212,13 +222,28 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
         style={{ height: "min(64vh, 680px)", touchAction: "none", background: "var(--bp-paper-deep)" }}
       >
         <Canvas
-          camera={{ position: [L * 0.75, H * 0.7, L * 0.9], fov: 40, near: 1, far: 5000 }}
           gl={{ preserveDrawingBuffer: true, antialias: true }}
-          onCreated={({ camera }) => camera.lookAt(L / 2, H / 2, 0)}
           onPointerMissed={() => {
             if (!measureRef.current) setSelected(null);
           }}
         >
+          {ortho ? (
+            <OrthographicCamera
+              makeDefault
+              position={[L * 0.75, H * 0.7, L * 0.9]}
+              zoom={Math.max(1.5, 480 / Math.max(L, H))}
+              near={-8000}
+              far={8000}
+            />
+          ) : (
+            <PerspectiveCamera
+              makeDefault
+              position={[L * 0.75, H * 0.7, L * 0.9]}
+              fov={40}
+              near={1}
+              far={5000}
+            />
+          )}
           <ambientLight intensity={0.55} />
           <directionalLight position={[L, H * 2, L]} intensity={1.1} />
           <directionalLight position={[-L, H, -L]} intensity={0.4} />
@@ -259,7 +284,7 @@ export function FramingScene({ layout }: { layout: StudLayout }) {
             args={[Math.max(L, H) * 2, Math.round((Math.max(L, H) * 2) / 12), "#2c5f8a", "#16395c"]}
             position={[L / 2, -1, 0]}
           />
-          <OrbitControls target={[L / 2, H / 2, 0]} enableDamping makeDefault />
+          <OrbitControls key={ortho ? "ortho" : "persp"} target={[L / 2, H / 2, 0]} enableDamping makeDefault />
         </Canvas>
       </div>
       <p className="bp-dim text-[10px] text-bp-line-soft">
