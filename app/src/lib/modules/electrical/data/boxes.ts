@@ -23,6 +23,8 @@ export interface BoxSpec {
   label: string;
   gangs: number;
   kind: "device" | "ceiling";
+  /** Listed for fan support (NEC 314.27(C)) — required for ceiling fans. */
+  fanRated?: boolean;
   capacity: QuarterIn3;
   workTypes: WorkType[];
   /**
@@ -116,6 +118,52 @@ export const BOXES: BoxSpec[] = [
     hasClamps: true,
     priceCents: 429,
     shoppingQuery: "2 gang old work box 25 cu in",
+  },
+  {
+    id: "rd-nw-21",
+    label: 'Round new-work ceiling box, 21 in³',
+    gangs: 1,
+    kind: "ceiling",
+    capacity: fromIn3(21),
+    workTypes: ["new-work"],
+    hasClamps: false,
+    priceCents: 229,
+    shoppingQuery: "round ceiling electrical box new work 21 cu in",
+  },
+  {
+    id: "rd-ow-15",
+    label: 'Round old-work ceiling box, 15.5 in³',
+    gangs: 1,
+    kind: "ceiling",
+    capacity: fromIn3(15.5),
+    workTypes: ["old-work", "existing-box"],
+    hasClamps: true,
+    priceCents: 349,
+    shoppingQuery: "round old work ceiling box",
+  },
+  {
+    id: "fan-nw-15",
+    label: 'Fan-rated new-work ceiling box, 15.5 in³',
+    gangs: 1,
+    kind: "ceiling",
+    fanRated: true,
+    capacity: fromIn3(15.5),
+    workTypes: ["new-work"],
+    hasClamps: false,
+    priceCents: 1299,
+    shoppingQuery: "ceiling fan rated electrical box new work",
+  },
+  {
+    id: "fan-ow-14",
+    label: 'Fan-rated old-work brace box, 14 in³',
+    gangs: 1,
+    kind: "ceiling",
+    fanRated: true,
+    capacity: fromIn3(14),
+    workTypes: ["old-work", "existing-box"],
+    hasClamps: true,
+    priceCents: 2499,
+    shoppingQuery: "ceiling fan brace box old work",
   },
 ];
 

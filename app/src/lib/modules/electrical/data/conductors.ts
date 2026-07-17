@@ -20,7 +20,9 @@ export const CABLES: Record<CableType, CableSpec> = {
   "12/3": { type: "12/3", awg: 12, insulated: ["black", "red", "white"], sheathColor: "yellow" },
   "10/2": { type: "10/2", awg: 10, insulated: ["black", "white"], sheathColor: "orange" },
   "10/3": { type: "10/3", awg: 10, insulated: ["black", "red", "white"], sheathColor: "orange" },
+  "8/2": { type: "8/2", awg: 8, insulated: ["black", "white"], sheathColor: "black" },
   "8/3": { type: "8/3", awg: 8, insulated: ["black", "red", "white"], sheathColor: "black" },
+  "6/2": { type: "6/2", awg: 6, insulated: ["black", "white"], sheathColor: "black" },
   "6/3": { type: "6/3", awg: 6, insulated: ["black", "red", "white"], sheathColor: "black" },
 };
 

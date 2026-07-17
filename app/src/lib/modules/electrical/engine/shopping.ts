@@ -25,6 +25,7 @@ const RECEPTACLE_KINDS: DeviceKind[] = [
   "receptacle-duplex",
   "receptacle-gfci",
   "receptacle-switched",
+  "receptacle-240",
 ];
 
 const MAKEUP_FT = 2; // slack per box for stripping and free conductor
@@ -32,11 +33,11 @@ const WASTE_FACTOR = 1.1;
 
 /**
  * Cable purchase counts each segment once: every cable arriving at a device
- * ("in"), plus legs leaving toward unmodeled fixtures ("out" toward a light).
- * "Onward" cables to the next device are that device's feed — not recounted.
+ * ("in"), plus a final out-leg toward an unmodeled light. "Onward" cables to
+ * the next device are that device's feed — not recounted.
  */
-function countsForPurchase(direction: "in" | "out", toward: string): boolean {
-  return direction === "in" || /light/i.test(toward);
+function countsForPurchase(direction: "in" | "out", toward: string, isLast: boolean): boolean {
+  return direction === "in" || (isLast && /light/i.test(toward));
 }
 
 /** Buy spools greedily: 250s while needed, then the smallest that covers. */
@@ -69,9 +70,13 @@ export function generateShopping(
     // Existing boxes already have their cable in the wall.
     if (deviceById.get(plan.deviceId)?.workType === "existing-box") continue;
     const config = deviceConfig(plan.kind, plan.configId);
-    if (!config) continue;
+    const circuit = circuitById.get(plan.circuitId);
+    if (!config || !circuit) continue;
+    // Only the LAST device's out-leg toward an unmodeled light is purchased —
+    // when the light is modeled downstream, that leg is the light's feed.
+    const isLast = circuit.devices[circuit.devices.length - 1]?.id === plan.deviceId;
     for (const spec of config.cables) {
-      if (!countsForPurchase(spec.direction, spec.toward)) continue;
+      if (!countsForPurchase(spec.direction, spec.toward, isLast)) continue;
       const cable = plan.cables.find((c) => c.role === spec.role);
       if (!cable) continue;
       cableFt.set(cable.type, (cableFt.get(cable.type) ?? 0) + cable.lengthFt + MAKEUP_FT);
@@ -109,7 +114,11 @@ export function generateShopping(
     // (NEC 210.21(B)); multi-receptacle 20A circuits may use 15A devices.
     const rating = isReceptacle && receptaclesOnCircuit === 1 ? circuit.breakerAmps : 15;
     const spec = deviceSpec(plan.kind);
-    const safeRating = spec && spec.priceCentsByRating[rating] !== undefined ? rating : 15;
+    const offered = Object.keys(spec?.priceCentsByRating ?? {})
+      .map(Number)
+      .sort((a, b) => a - b);
+    const safeRating =
+      spec && spec.priceCentsByRating[rating] !== undefined ? rating : (offered[0] ?? 15);
     const key = `${plan.kind}|${safeRating}`;
     const entry = deviceCounts.get(key) ?? { kind: plan.kind, rating: safeRating, qty: 0 };
     entry.qty += 1;
@@ -118,15 +127,19 @@ export function generateShopping(
   for (const [key, entry] of [...deviceCounts.entries()].sort()) {
     const spec = deviceSpec(entry.kind);
     if (!spec) continue;
-    const tr = RECEPTACLE_KINDS.includes(entry.kind) ? " TR" : "";
+    const isFixture = spec.yokes === 0;
+    const tr =
+      RECEPTACLE_KINDS.includes(entry.kind) && entry.kind !== "receptacle-240" ? " TR" : "";
     lines.push({
       id: `device-${key.replace("|", "-")}`,
-      description: `${spec.label}, ${entry.rating}A${tr}`,
+      description: isFixture
+        ? `${spec.label} (pick your model — cost varies)`
+        : `${spec.label}, ${entry.rating}A${tr}`,
       qty: entry.qty,
       unit: "ea",
       unitCostCents: spec.priceCentsByRating[entry.rating] ?? 0,
-      homeDepotUrl: hd(`${entry.rating} amp ${spec.shoppingQuery}`),
-      lowesUrl: lowes(`${entry.rating} amp ${spec.shoppingQuery}`),
+      homeDepotUrl: hd(isFixture ? spec.shoppingQuery : `${entry.rating} amp ${spec.shoppingQuery}`),
+      lowesUrl: lowes(isFixture ? spec.shoppingQuery : `${entry.rating} amp ${spec.shoppingQuery}`),
     });
   }
 
@@ -154,10 +167,10 @@ export function generateShopping(
   }
 
   // ---- wall plates -------------------------------------------------------------
-  const plateCounts = new Map<"duplex" | "decora" | "toggle", number>();
+  const plateCounts = new Map<"duplex" | "decora" | "toggle" | "single-240", number>();
   for (const plan of plans) {
     const plate = deviceSpec(plan.kind)?.plate;
-    if (plate) plateCounts.set(plate, (plateCounts.get(plate) ?? 0) + 1);
+    if (plate && plate !== "none") plateCounts.set(plate, (plateCounts.get(plate) ?? 0) + 1);
   }
   for (const [plate, qty] of [...plateCounts.entries()].sort()) {
     lines.push({

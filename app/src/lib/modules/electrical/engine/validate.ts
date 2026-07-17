@@ -85,6 +85,25 @@ export function validateDesign(
           deviceId: d.id,
         });
       }
+      const is240 = d.kind === "receptacle-240";
+      if (is240 && c.poles !== 2) {
+        warnings.push({
+          code: "invalid-device-config",
+          severity: "danger",
+          message: `${c.name}: a 240V receptacle needs a 2-pole breaker — this circuit is single-pole 120V`,
+          circuitId: c.id,
+          deviceId: d.id,
+        });
+      }
+      if (!is240 && c.poles === 2) {
+        warnings.push({
+          code: "invalid-device-config",
+          severity: "danger",
+          message: `${c.name}: a 120V device can't sit on a 240V (2-pole) circuit`,
+          circuitId: c.id,
+          deviceId: d.id,
+        });
+      }
     }
 
     const firsts = c.devices.filter(

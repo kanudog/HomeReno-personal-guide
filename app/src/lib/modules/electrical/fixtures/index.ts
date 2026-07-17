@@ -230,9 +230,164 @@ const deviceCoverage: ElectricalInput = {
   ],
 };
 
+/** Full modern multi-location run: SW1 → 4-way → SW2 → modeled light. */
+const fourWayRun: ElectricalInput = {
+  system: "mains",
+  panel: { label: "Main panel", mainAmps: 200, slots: 40, existing: [] },
+  rooms: [{ id: "hall", name: "Stair hall", type: "other", wallLengths: [] }],
+  circuits: [
+    {
+      id: "c-stair",
+      name: "Stair lights",
+      existing: false,
+      breakerAmps: 15,
+      poles: 1,
+      breakerType: "standard",
+      cable: "14/2",
+      slot: 9,
+      roomId: "hall",
+      devices: [
+        {
+          id: "d-sw1",
+          kind: "switch-3way",
+          config: "power-in-first",
+          position: "middle-of-run",
+          workType: "new-work",
+          feedLengthFt: 20,
+        },
+        {
+          id: "d-4w",
+          kind: "switch-4way",
+          config: "between-3ways",
+          position: "middle-of-run",
+          workType: "new-work",
+        },
+        {
+          id: "d-sw2",
+          kind: "switch-3way",
+          config: "light-out-last",
+          position: "middle-of-run",
+          workType: "new-work",
+        },
+        {
+          id: "d-light",
+          kind: "ceiling-light",
+          config: "end-of-run",
+          position: "end-of-run",
+          workType: "new-work",
+        },
+      ],
+      loads: [{ id: "stair-light", name: "Stair fixture (LED)", va: 40, qty: 2, continuous: true }],
+    },
+  ],
+};
+
+/** Bedroom ceiling fan, fan + light switched separately, AFCI per NC. */
+const fanLightBedroom: ElectricalInput = {
+  system: "mains",
+  panel: { label: "Main panel", mainAmps: 200, slots: 40, existing: [] },
+  rooms: [{ id: "bed2", name: "Guest bedroom", type: "bedroom", wallLengths: [] }],
+  circuits: [
+    {
+      id: "c-fan",
+      name: "Guest bedroom fan",
+      existing: false,
+      breakerAmps: 15,
+      poles: 1,
+      breakerType: "afci",
+      cable: "14/2",
+      slot: 21,
+      roomId: "bed2",
+      devices: [
+        {
+          id: "d-fan",
+          kind: "ceiling-fan",
+          config: "fan-light-separate",
+          position: "end-of-run",
+          workType: "new-work",
+          feedLengthFt: 25,
+        },
+      ],
+      loads: [{ id: "fan-kit", name: "Fan + light kit", va: 250, qty: 1, continuous: false }],
+    },
+  ],
+};
+
+/** 240V dryer circuit: 30A 2-pole, 10/3, NEMA 14-30. */
+const dryer240: ElectricalInput = {
+  system: "mains",
+  panel: { label: "Main panel", mainAmps: 200, slots: 40, existing: [] },
+  rooms: [],
+  circuits: [
+    {
+      id: "c-dryer",
+      name: "Dryer",
+      existing: false,
+      breakerAmps: 30,
+      poles: 2,
+      breakerType: "standard",
+      cable: "10/3",
+      slot: 2,
+      devices: [
+        {
+          id: "d-dryer",
+          kind: "receptacle-240",
+          config: "nema-14-30-dryer",
+          position: "end-of-run",
+          workType: "new-work",
+          feedLengthFt: 30,
+        },
+      ],
+      loads: [{ id: "dryer", name: "Electric dryer", va: 5400, qty: 1, continuous: false }],
+    },
+  ],
+};
+
+/** Power-at-light + x/3 loop down to a smart switch — the 404.2(C) payoff. */
+const smartHall: ElectricalInput = {
+  system: "mains",
+  panel: { label: "Main panel", mainAmps: 200, slots: 40, existing: [] },
+  rooms: [{ id: "hall2", name: "Back hall", type: "other", wallLengths: [] }],
+  circuits: [
+    {
+      id: "c-smart",
+      name: "Back hall light",
+      existing: false,
+      breakerAmps: 15,
+      poles: 1,
+      breakerType: "standard",
+      cable: "14/2",
+      slot: 11,
+      roomId: "hall2",
+      devices: [
+        {
+          id: "d-light",
+          kind: "ceiling-light",
+          config: "power-at-light-loop",
+          position: "middle-of-run",
+          workType: "new-work",
+          feedLengthFt: 25,
+        },
+        {
+          id: "d-smart",
+          kind: "smart-switch",
+          config: "neutral-loop",
+          position: "end-of-run",
+          workType: "new-work",
+        },
+      ],
+      loads: [{ id: "hall-light", name: "Hall fixture (LED)", va: 30, qty: 1, continuous: true }],
+    },
+  ],
+};
+
 export const FIXTURES = {
   "mudroom-laundry": mudroomLaundry,
   "printing-room": printingRoom,
   "three-way-pair": threeWayPair,
   "device-coverage": deviceCoverage,
+  "four-way-run": fourWayRun,
+  "fan-light-bedroom": fanLightBedroom,
+  "dryer-240": dryer240,
+  "smart-hall": smartHall,
 } as const;

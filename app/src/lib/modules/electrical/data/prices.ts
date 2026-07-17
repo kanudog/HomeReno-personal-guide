@@ -13,7 +13,9 @@ export const CABLE_SPOOL_PRICES_CENTS: Record<CableType, Record<number, number>>
   "12/3": { 25: 3450, 50: 6250, 100: 10900, 250: 23900 },
   "10/2": { 25: 3950, 50: 6950, 100: 12500, 250: 27900 },
   "10/3": { 25: 5450, 50: 9950, 100: 17900, 250: 39900 },
+  "8/2": { 25: 6900, 50: 12500, 100: 22900, 250: 51900 },
   "8/3": { 25: 8900, 50: 15900, 100: 28900, 250: 64900 },
+  "6/2": { 25: 9900, 50: 18500, 100: 34900, 250: 77900 },
   "6/3": { 25: 12900, 50: 23900, 100: 44900, 250: 99900 },
 };
 
@@ -28,10 +30,14 @@ export const BREAKER_PRICES_CENTS: Record<BreakerType, number> = {
   "dual-function": 5900,
 };
 
-export const WALL_PLATE_PRICES_CENTS: Record<"duplex" | "decora" | "toggle", number> = {
+export const WALL_PLATE_PRICES_CENTS: Record<
+  "duplex" | "decora" | "toggle" | "single-240",
+  number
+> = {
   duplex: 99,
   decora: 129,
   toggle: 99,
+  "single-240": 349,
 };
 
 /** Wire nuts by size — sold in small packs. */

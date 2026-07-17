@@ -21,7 +21,9 @@ export type CableType =
   | "12/3"
   | "10/2"
   | "10/3"
+  | "8/2"
   | "8/3"
+  | "6/2"
   | "6/3";
 
 export type ConductorColor = "black" | "red" | "white" | "bare" | "green";

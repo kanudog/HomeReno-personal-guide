@@ -40,8 +40,12 @@ export function generateElectricalTasks(
     const boxLines = newWork
       .map((p) => {
         const box = boxById(p.boxFill.boxId);
-        const kind = p.kind.startsWith("switch") ? 'switch height (48" to center)' : 'receptacle height (12" to bottom)';
-        return `${p.displayName}: ${box?.label ?? p.boxFill.boxLabel} at ${kind}`;
+        const where = p.kind.startsWith("ceiling")
+          ? "the fixture location (ceiling)"
+          : p.kind.includes("switch") || p.kind.startsWith("dimmer")
+            ? 'switch height (48" to center)'
+            : 'receptacle height (12" to bottom; 240V: where the appliance cord reaches)';
+        return `${p.displayName}: ${box?.label ?? p.boxFill.boxLabel} at ${where}`;
       })
       .join("; ");
     const cableLines = [

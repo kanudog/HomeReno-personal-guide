@@ -24,6 +24,10 @@ export function cableForRole(circuitCable: CableType, wires: 2 | 3): CableType {
   return `${awg}/${wires}` as CableType;
 }
 
+const TRAVELER_TERMINALS = new Set(["t-a", "t-b", "lead-t1", "lead-t2", "in-a", "in-b", "out-a", "out-b"]);
+const COMMON_TERMINALS = new Set(["common", "lead-common"]);
+const HOT_240_TERMINALS = new Set(["term-x", "term-y"]);
+
 function conductorRole(
   cable: CableRoleSpec,
   color: string,
@@ -35,9 +39,11 @@ function conductorRole(
     if (target.reidentified) return "hot";
     return "neutral";
   }
-  if (target.terminalId === "t-a" || target.terminalId === "t-b") return "traveler";
+  if (target.terminalId !== undefined && TRAVELER_TERMINALS.has(target.terminalId)) return "traveler";
+  if (target.terminalId !== undefined && HOT_240_TERMINALS.has(target.terminalId)) return "hot";
   // A conductor leaving toward the light on the COMMON screw is the switched hot.
-  if (target.terminalId === "common" && cable.direction === "out") return "switched";
+  if (target.terminalId !== undefined && COMMON_TERMINALS.has(target.terminalId) && cable.direction === "out")
+    return "switched";
   if (color === "red") return "switched";
   return "hot";
 }
@@ -96,8 +102,8 @@ export function buildDevicePlan(
   // ---- walk the steps: wire nuts + connections -----------------------------
   const wirenuts: WireNutSpec[] = [];
   const connections: ResolvedConnection[] = [];
-  const terminalLabel = (terminalId: string) =>
-    spec.terminals.find((t) => t.id === terminalId)?.label ?? terminalId;
+  const terminals = config.terminalsOverride ?? spec.terminals;
+  const terminalById = (terminalId: string) => terminals.find((t) => t.id === terminalId);
 
   config.steps.forEach((step, index) => {
     const conductorIds = step.take.map((t) => `${device.id}.${t.cableRole}.${t.color}`);
@@ -124,16 +130,35 @@ export function buildDevicePlan(
     }
 
     if (step.target.kind === "terminal") {
+      const terminal = terminalById(step.target.terminalId);
       connections.push({
         step: index,
         conductorIds,
         target: {
           kind: "terminal",
           terminalId: step.target.terminalId,
-          terminalLabel: terminalLabel(step.target.terminalId),
+          terminalLabel: terminal?.label ?? step.target.terminalId,
         },
         instruction: step.instruction,
       });
+      // Landing on a wire LEAD (fixture/dimmer) is itself a wire-nut splice.
+      if (terminal?.splice) {
+        const size = pickWireNut(conductorIds.length + 1, awg);
+        if (size === null) {
+          warnings.push({
+            code: "wirenut-overfilled",
+            severity: "warn",
+            message: `${displayName}: ${conductorIds.length + 1} × ${awg} AWG at the ${terminal.label} exceeds listed wire-nut sizes — use a lever connector`,
+            circuitId: circuit.id,
+            deviceId: device.id,
+          });
+        }
+        wirenuts.push({
+          id: `${device.id}.WN-L-${step.target.terminalId}`,
+          size: size ?? "lever connector",
+          conductorIds,
+        });
+      }
       return;
     }
 
@@ -186,6 +211,8 @@ export function buildDevicePlan(
     clamps: false, // per-box; set by computeBoxFill/pickBox from the BoxSpec
   };
 
+  const boxKind = spec.boxKind ?? "device";
+  const gangs = spec.minGangs ?? 1;
   let boxFill;
   if (device.boxId) {
     const box = boxById(device.boxId);
@@ -197,12 +224,12 @@ export function buildDevicePlan(
         circuitId: circuit.id,
         deviceId: device.id,
       });
-      boxFill = pickBox(fillParams, device.workType).result;
+      boxFill = pickBox(fillParams, device.workType, boxKind, gangs).result;
     } else {
       boxFill = computeBoxFill({ ...fillParams, clamps: box.hasClamps }, box);
     }
   } else {
-    boxFill = pickBox(fillParams, device.workType).result;
+    boxFill = pickBox(fillParams, device.workType, boxKind, gangs).result;
   }
 
   if (!boxFill.pass) {

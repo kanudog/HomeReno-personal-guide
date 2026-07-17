@@ -106,10 +106,17 @@ function suggestBox(fill: QuarterIn3, like: BoxSpec): BoxSpec | undefined {
 export function pickBox(
   params: BoxFillParams,
   workType: WorkType,
+  boxKind: "device" | "ceiling" | "ceiling-fan" = "device",
   gangs = 1,
 ): { box: BoxSpec; result: BoxFillResult } {
+  const kind = boxKind === "device" ? "device" : "ceiling";
+  const wantFan = boxKind === "ceiling-fan";
   const candidates = BOXES.filter(
-    (b) => b.gangs === gangs && b.kind === "device" && b.workTypes.includes(workType),
+    (b) =>
+      b.gangs === gangs &&
+      b.kind === kind &&
+      !!b.fanRated === wantFan &&
+      b.workTypes.includes(workType),
   );
   let fallback: { box: BoxSpec; result: BoxFillResult } | null = null;
   for (const box of candidates) {

@@ -45,7 +45,8 @@ export function buildSchematic(
     });
 
     let prev = breakerId;
-    for (const device of circuit.devices) {
+    for (const [index, device] of circuit.devices.entries()) {
+      const isLast = index === circuit.devices.length - 1;
       const plan = plansByDevice.get(device.id);
       if (!plan) continue;
       const config = deviceConfig(plan.kind, plan.configId);
@@ -61,8 +62,11 @@ export function buildSchematic(
 
       const inSpec = config?.cables.find((c) => c.direction === "in");
       const inCable = plan.cables.find((c) => c.role === inSpec?.role);
+      // Far-end helper nodes only make sense when nothing is modeled between
+      // the breaker and this device — otherwise the chain already shows it.
+      const prevIsBreaker = prev === breakerId;
 
-      if (inSpec && inCable && /light/i.test(inSpec.toward)) {
+      if (inSpec && inCable && prevIsBreaker && /light/i.test(inSpec.toward)) {
         // Power reaches the fixture first; the loop drops to this device.
         const fixtureId = `fx-${device.id}-in`;
         nodes.push({
@@ -74,7 +78,7 @@ export function buildSchematic(
         });
         edges.push({ from: prev, to: fixtureId, cable: circuit.cable, label: "feed" });
         edges.push({ from: fixtureId, to: deviceNodeId, cable: inCable.type, label: inSpec.label.toLowerCase() });
-      } else if (inSpec && inCable && /switch/i.test(inSpec.toward)) {
+      } else if (inSpec && inCable && prevIsBreaker && /switch/i.test(inSpec.toward)) {
         const switchId = `fx-${device.id}-in`;
         nodes.push({
           id: switchId,
@@ -89,9 +93,9 @@ export function buildSchematic(
         edges.push({ from: prev, to: deviceNodeId, cable: inCable.type, label: inSpec?.label.toLowerCase() ?? "feed" });
       }
 
-      // Unmodeled light at the end of an out-leg.
+      // Unmodeled light at the end of a final out-leg.
       for (const outSpec of config?.cables.filter((c) => c.direction === "out") ?? []) {
-        if (!/light$/i.test(outSpec.toward)) continue;
+        if (!isLast || !/light$/i.test(outSpec.toward)) continue;
         const outCable = plan.cables.find((c) => c.role === outSpec.role);
         if (!outCable) continue;
         const fixtureId = `fx-${device.id}-out`;

@@ -251,6 +251,175 @@ describe("golden: device-coverage", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Golden: four-way-run (SW1 → 4-way → SW2 → modeled light)
+// ---------------------------------------------------------------------------
+describe("golden: four-way-run", () => {
+  const out = get("four-way-run");
+
+  it("chains the schematic through all four devices with no phantom fixtures", () => {
+    expect(out.schematic.edges.map((e) => [e.from, e.to, e.cable])).toEqual([
+      ["panel", "bkr-c-stair", "14/2"],
+      ["bkr-c-stair", "dev-d-sw1", "14/2"],
+      ["dev-d-sw1", "dev-d-4w", "14/3"],
+      ["dev-d-4w", "dev-d-sw2", "14/3"],
+      ["dev-d-sw2", "dev-d-light", "14/2"],
+    ]);
+  });
+
+  it("lands the 4-way's pairs cable-by-cable", () => {
+    const fourWay = out.devicePlans.find((p) => p.kind === "switch-4way")!;
+    const landings = fourWay.connections
+      .filter((c) => c.target.kind === "terminal" && c.target.terminalId !== "ground")
+      .map((c) => [c.conductorIds[0], (c.target as { terminalId: string }).terminalId]);
+    expect(landings).toEqual([
+      ["d-4w.from-first.black", "in-a"],
+      ["d-4w.from-first.red", "in-b"],
+      ["d-4w.to-last.black", "out-a"],
+      ["d-4w.to-last.red", "out-b"],
+    ]);
+  });
+
+  it("wires the modeled light on leads (3 wire-nut splices)", () => {
+    const light = out.devicePlans.find((p) => p.kind === "ceiling-light")!;
+    expect(light.boxFill.boxId).toBe("rd-nw-21");
+    expect(light.wirenuts).toHaveLength(3);
+    expect(out.warnings).toEqual([]);
+  });
+
+  it("buys each traveler segment exactly once", () => {
+    const cableLines = out.shopping.filter((l) => l.id.startsWith("cable-"));
+    // 14/2: SW1 feed (20+2) + light feed (15+2) = 39 → 43 → 50' spool
+    // 14/3: 4-way in (17) + SW2 in (17) = 34 → 38 → 50' spool
+    expect(cableLines.map((l) => [l.id, l.qty])).toEqual([
+      ["cable-14-2-50", 1],
+      ["cable-14-3-50", 1],
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Golden: fan-light-bedroom / dryer-240 / smart-hall (wave-2 devices)
+// ---------------------------------------------------------------------------
+describe("golden: fan-light-bedroom", () => {
+  const out = get("fan-light-bedroom");
+
+  it("splits fan (black) and light (red) onto the right leads in a fan-rated box", () => {
+    const fan = out.devicePlans[0]!;
+    expect(fan.boxFill.boxId).toBe("fan-nw-15");
+    const landings = fan.connections.map((c) => [
+      c.conductorIds[0],
+      (c.target as { terminalId: string }).terminalId,
+    ]);
+    expect(landings).toEqual([
+      ["d-fan.from-switches.bare", "lead-ground"],
+      ["d-fan.from-switches.white", "lead-neutral"],
+      ["d-fan.from-switches.black", "lead-fan"],
+      ["d-fan.from-switches.red", "lead-light"],
+    ]);
+  });
+
+  it("satisfies NC bedroom AFCI with the AFCI breaker (no warnings)", () => {
+    expect(out.warnings).toEqual([]);
+  });
+
+  it("draws the unmodeled two-gang switch box in the schematic", () => {
+    expect(out.schematic.nodes.map((n) => n.id)).toEqual([
+      "panel",
+      "bkr-c-fan",
+      "dev-d-fan",
+      "fx-d-fan-in",
+    ]);
+    expect(out.schematic.edges.map((e) => [e.from, e.to])).toEqual([
+      ["panel", "bkr-c-fan"],
+      ["bkr-c-fan", "fx-d-fan-in"],
+      ["fx-d-fan-in", "dev-d-fan"],
+    ]);
+  });
+});
+
+describe("golden: dryer-240", () => {
+  const out = get("dryer-240");
+
+  it("computes 240V capacity and passes the dryer load", () => {
+    expect(out.circuitLoads[0]).toMatchObject({
+      volts: 240,
+      capacityVa: 7200,
+      connectedVa: 5400,
+      pctOfCapacity: 75,
+      pass: true,
+    });
+    expect(out.warnings).toEqual([]);
+  });
+
+  it("lands X/Y/W/G and marks the red as a hot leg", () => {
+    const dryer = out.devicePlans[0]!;
+    expect(dryer.boxFill.boxId).toBe("2g-nw-34");
+    const landings = dryer.connections.map((c) => [
+      c.conductorIds[0],
+      (c.target as { terminalId: string }).terminalId,
+    ]);
+    expect(landings).toEqual([
+      ["d-dryer.feed.bare", "ground"],
+      ["d-dryer.feed.white", "term-w"],
+      ["d-dryer.feed.black", "term-x"],
+      ["d-dryer.feed.red", "term-y"],
+    ]);
+    const red = dryer.cables[0]!.conductors.find((c) => c.color === "red")!;
+    expect(red.role).toBe("hot");
+  });
+
+  it("shops the 30A receptacle, 2-pole breaker, and 240 plate (no TR tag)", () => {
+    const device = out.shopping.find((l) => l.id === "device-receptacle-240-30")!;
+    expect(device.description).toBe("240V receptacle, 30A");
+    expect(device.unitCostCents).toBe(1499);
+    const breaker = out.shopping.find((l) => l.id === "breaker-30-2-standard")!;
+    expect(breaker.unitCostCents).toBe(1978); // 2-pole ≈ 2.2×
+    expect(out.shopping.some((l) => l.id === "plate-single-240")).toBe(true);
+  });
+
+  it("occupies both slots of the 2-pole space in the directory", () => {
+    expect(out.panelDirectory).toEqual([
+      { slot: 2, label: "Dryer", amps: 30, poles: 2, isNew: true },
+    ]);
+  });
+});
+
+describe("golden: smart-hall", () => {
+  const out = get("smart-hall");
+
+  it("power-at-light loop feeds the smart switch its neutral", () => {
+    const smart = out.devicePlans.find((p) => p.kind === "smart-switch")!;
+    const landings = smart.connections.map((c) => [
+      c.conductorIds[0],
+      (c.target as { terminalId: string }).terminalId,
+    ]);
+    expect(landings).toEqual([
+      ["d-smart.loop.bare", "ground"],
+      ["d-smart.loop.white", "neutral"],
+      ["d-smart.loop.black", "line"],
+      ["d-smart.loop.red", "load"],
+    ]);
+    expect(out.warnings).toEqual([]);
+  });
+
+  it("splices the light's leads and passes constant hot down the loop", () => {
+    const light = out.devicePlans.find((p) => p.kind === "ceiling-light")!;
+    expect(light.boxFill.boxId).toBe("rd-nw-21");
+    expect(light.wirenuts).toHaveLength(4); // ground lead, neutral lead, H splice, switched lead
+    const loop = light.cables.find((c) => c.role === "loop")!;
+    expect(loop.conductors.find((c) => c.color === "red")!.role).toBe("switched");
+  });
+
+  it("chains light → smart switch directly (no phantom fixture between)", () => {
+    expect(out.schematic.edges.map((e) => [e.from, e.to, e.cable])).toEqual([
+      ["panel", "bkr-c-smart", "14/2"],
+      ["bkr-c-smart", "dev-d-light", "14/2"],
+      ["dev-d-light", "dev-d-smart", "14/3"],
+    ]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Catalog invariants — hold for every device × configuration
 // ---------------------------------------------------------------------------
 describe("catalog invariants", () => {
@@ -332,17 +501,20 @@ describe("catalog invariants", () => {
           for (const nut of plan!.wirenuts) {
             expect(nut.size).not.toBe("lever connector");
           }
-          // every bare conductor ends grounded: at the ground terminal or in
-          // a splice that pigtails to it
+          // every bare conductor ends grounded: at a green terminal/lead or
+          // in a splice that pigtails to one
+          const terminals = config.terminalsOverride ?? spec.terminals;
+          const isGreen = (terminalId: string) =>
+            terminals.find((t) => t.id === terminalId)?.screw === "green";
           for (const cable of plan!.cables) {
             const bare = cable.conductors.find((c) => c.color === "bare")!;
             expect(bare.role).toBe("ground");
             const target = plan!.connections.find((c) => c.conductorIds.includes(bare.id))!.target;
             if (target.kind === "terminal") {
-              expect(target.terminalId).toBe("ground");
+              expect(isGreen(target.terminalId)).toBe(true);
             } else if (target.kind === "wirenut") {
               const nut = plan!.wirenuts.find((n) => n.id === target.wirenutId)!;
-              expect(nut.pigtail?.toTerminalId).toBe("ground");
+              expect(isGreen(nut.pigtail?.toTerminalId ?? "")).toBe(true);
             } else {
               throw new Error("bare conductor must land on ground");
             }
@@ -366,7 +538,7 @@ describe("catalog invariants", () => {
   it("box catalog is ordered smallest-first within each family", () => {
     const families = new Map<string, number>();
     for (const box of BOXES) {
-      const key = `${box.gangs}|${box.kind}|${box.workTypes.join(",")}`;
+      const key = `${box.gangs}|${box.kind}|${!!box.fanRated}|${box.workTypes.join(",")}`;
       const prev = families.get(key);
       if (prev !== undefined) expect(box.capacity as number).toBeGreaterThanOrEqual(prev);
       families.set(key, box.capacity as number);
