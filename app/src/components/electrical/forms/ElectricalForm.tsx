@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type {
   CableType,
   CircuitInput,
@@ -40,6 +41,45 @@ const WORK_LABELS: Record<DeviceInput["workType"], string> = {
   "old-work": "Cut-in box",
   "existing-box": "Existing box",
 };
+
+/**
+ * Collapsible drafting panel — the de-clutter backbone. Collapsed sections
+ * show a one-line summary so the form reads as an outline until you open
+ * the part you're working on.
+ */
+function Section({
+  title,
+  summary,
+  defaultOpen = false,
+  actions,
+  children,
+}: {
+  title: string;
+  summary?: string;
+  defaultOpen?: boolean;
+  actions?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section className="bp-panel p-3">
+      <div className="flex items-center justify-between gap-2">
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex min-w-0 grow items-center gap-2 text-left"
+        >
+          <span className="bp-dim w-3 shrink-0 text-[11px] text-bp-accent">{open ? "▾" : "▸"}</span>
+          <h3 className="bp-panel-title shrink-0 text-sm">{title}</h3>
+          {!open && summary && (
+            <span className="bp-dim truncate text-[10px] text-bp-line-soft">{summary}</span>
+          )}
+        </button>
+        {actions && <div className="flex shrink-0 gap-1.5">{actions}</div>}
+      </div>
+      {open && <div className="mt-3">{children}</div>}
+    </section>
+  );
+}
 
 function NumField({
   label,
@@ -155,6 +195,7 @@ function DeviceCard({
   const selectDevice = useElectrical((s) => s.selectDevice);
   const selectedDeviceId = useElectrical((s) => s.selectedDeviceId);
   const planWalls = useRoom((s) => s.plan.walls);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const spec = deviceSpec(device.kind);
   const config = spec?.configs.find((c) => c.id === device.config);
   const selected = selectedDeviceId === device.id;
@@ -166,10 +207,11 @@ function DeviceCard({
   return (
     <div
       onClick={() => selectDevice(device.id)}
-      className={`rounded-sm border p-2.5 transition-colors ${
+      className={`rounded-sm border p-3 transition-colors ${
         selected ? "border-bp-accent bg-bp-paper-raised/40" : "border-bp-line-faint"
       }`}
     >
+      {/* essentials: what it is + which situation */}
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex flex-col gap-0.5">
           <span className={tinyLabel}>Device</span>
@@ -185,7 +227,7 @@ function DeviceCard({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-0.5">
+        <label className="flex min-w-0 grow flex-col gap-0.5">
           <span className={tinyLabel}>Situation</span>
           <select
             className={selectCls}
@@ -205,45 +247,25 @@ function DeviceCard({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-0.5">
-          <span className={tinyLabel}>Room</span>
-          <select
-            className={selectCls}
-            value={device.roomId ?? circuit.roomId ?? ""}
-            onChange={(e) => patch({ roomId: e.target.value || undefined })}
-          >
-            <option value="">—</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        {room?.type === "kitchen" && (
-          <label className="flex flex-col gap-0.5">
-            <span className={tinyLabel}>Location</span>
-            <select
-              className={selectCls}
-              value={device.location ?? "wall"}
-              onChange={(e) => patch({ location: e.target.value as "wall" | "counter" })}
-            >
-              <option value="wall">Wall</option>
-              <option value="counter">Counter</option>
-            </select>
-          </label>
-        )}
-        <NumField
-          label="Feed run (ft)"
-          value={device.feedLengthFt}
-          onChange={(v) => patch({ feedLengthFt: v })}
-        />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setDetailsOpen((o) => !o);
+          }}
+          className={`${chipBase} h-9 ${
+            detailsOpen
+              ? "border-bp-accent text-bp-accent"
+              : "border-bp-line-faint text-bp-line-soft hover:text-bp-line"
+          }`}
+        >
+          {detailsOpen ? "Less ▴" : "Details ▾"}
+        </button>
         <button
           onClick={(e) => {
             e.stopPropagation();
             removeDevice(circuit.id, device.id);
           }}
-          className="bp-dim ml-auto h-9 rounded-sm border border-bp-line-faint px-2 text-[11px] text-bp-line-soft hover:border-bp-danger hover:text-bp-danger"
+          className="bp-dim h-9 rounded-sm border border-bp-line-faint px-2 text-[11px] text-bp-line-soft hover:border-bp-danger hover:text-bp-danger"
         >
           ✕
         </button>
@@ -266,91 +288,134 @@ function DeviceCard({
             {WORK_LABELS[w]}
           </button>
         ))}
-        <span className="mx-1 h-4 w-px bg-bp-line-faint" />
-        <label className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={marked}
-            onChange={(e) =>
-              patch(
-                e.target.checked
-                  ? {
-                      wallDesignId: "scratch-wall",
-                      xOnWall: device.xOnWall ?? MARKER_DEFAULTS.xOnWall,
-                      heightAFF:
-                        device.heightAFF ??
-                        (device.kind.includes("switch") || device.kind.startsWith("dimmer")
-                          ? MARKER_DEFAULTS.switchAFF
-                          : MARKER_DEFAULTS.receptacleAFF),
-                    }
-                  : { wallDesignId: undefined, xOnWall: undefined, heightAFF: undefined },
-              )
-            }
-            className="h-4 w-4 accent-[var(--bp-accent)]"
-          />
-          <span className={tinyLabel}>Mark on framed wall</span>
-        </label>
-        {marked && (
-          <span className="flex items-end gap-2" onClick={(e) => e.stopPropagation()}>
+        {device.fieldNotes && !detailsOpen && (
+          <span className="bp-dim truncate text-[10px] text-bp-ok" title={device.fieldNotes}>
+            📋 field notes
+          </span>
+        )}
+      </div>
+
+      {config && <p className="bp-dim mt-2 text-[10px] text-bp-line-soft">{config.description}</p>}
+
+      {detailsOpen && (
+        <div className="mt-3 flex flex-col gap-2.5 border-t border-bp-line-faint/50 pt-2.5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex flex-wrap items-end gap-2">
             <label className="flex flex-col gap-0.5">
-              <span className={tinyLabel}>Wall</span>
+              <span className={tinyLabel}>Room</span>
               <select
                 className={selectCls}
-                value={device.wallDesignId}
-                onChange={(e) => patch({ wallDesignId: e.target.value })}
+                value={device.roomId ?? circuit.roomId ?? ""}
+                onChange={(e) => patch({ roomId: e.target.value || undefined })}
               >
-                <option value="scratch-wall">Framing designer wall</option>
-                {planWalls.map((w) => (
-                  <option key={w.id} value={`room:${w.id}`}>
-                    Planner: {w.name}
+                <option value="">—</option>
+                {rooms.map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
                   </option>
                 ))}
               </select>
             </label>
-            <TapeMeasureInput
-              compact
-              label="From wall left"
-              value={(device.xOnWall ?? MARKER_DEFAULTS.xOnWall) as Sixteenths}
-              onChange={(v) => patch({ xOnWall: v })}
-              system={system}
+            {room?.type === "kitchen" && (
+              <label className="flex flex-col gap-0.5">
+                <span className={tinyLabel}>Location</span>
+                <select
+                  className={selectCls}
+                  value={device.location ?? "wall"}
+                  onChange={(e) => patch({ location: e.target.value as "wall" | "counter" })}
+                >
+                  <option value="wall">Wall</option>
+                  <option value="counter">Counter</option>
+                </select>
+              </label>
+            )}
+            <NumField
+              label="Feed run (ft)"
+              value={device.feedLengthFt}
+              onChange={(v) => patch({ feedLengthFt: v })}
             />
-            <TapeMeasureInput
-              compact
-              label="Height AFF"
-              value={(device.heightAFF ?? MARKER_DEFAULTS.receptacleAFF) as Sixteenths}
-              onChange={(v) => patch({ heightAFF: v })}
-              system={system}
-            />
-          </span>
-        )}
-      </div>
+          </div>
 
-      {config && <p className="bp-dim mt-1.5 text-[10px] text-bp-line-soft">{config.description}</p>}
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="flex h-9 items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={marked}
+                onChange={(e) =>
+                  patch(
+                    e.target.checked
+                      ? {
+                          wallDesignId: "scratch-wall",
+                          xOnWall: device.xOnWall ?? MARKER_DEFAULTS.xOnWall,
+                          heightAFF:
+                            device.heightAFF ??
+                            (device.kind.includes("switch") || device.kind.startsWith("dimmer")
+                              ? MARKER_DEFAULTS.switchAFF
+                              : MARKER_DEFAULTS.receptacleAFF),
+                        }
+                      : { wallDesignId: undefined, xOnWall: undefined, heightAFF: undefined },
+                  )
+                }
+                className="h-4 w-4 accent-[var(--bp-accent)]"
+              />
+              <span className={tinyLabel}>Mark on framed wall</span>
+            </label>
+            {marked && (
+              <>
+                <label className="flex flex-col gap-0.5">
+                  <span className={tinyLabel}>Wall</span>
+                  <select
+                    className={selectCls}
+                    value={device.wallDesignId}
+                    onChange={(e) => patch({ wallDesignId: e.target.value })}
+                  >
+                    <option value="scratch-wall">Framing designer wall</option>
+                    {planWalls.map((w) => (
+                      <option key={w.id} value={`room:${w.id}`}>
+                        Planner: {w.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <TapeMeasureInput
+                  compact
+                  label="From wall left"
+                  value={(device.xOnWall ?? MARKER_DEFAULTS.xOnWall) as Sixteenths}
+                  onChange={(v) => patch({ xOnWall: v })}
+                  system={system}
+                />
+                <TapeMeasureInput
+                  compact
+                  label="Height AFF"
+                  value={(device.heightAFF ?? MARKER_DEFAULTS.receptacleAFF) as Sixteenths}
+                  onChange={(v) => patch({ heightAFF: v })}
+                  system={system}
+                />
+              </>
+            )}
+          </div>
 
-      <div className="mt-1.5 flex flex-wrap items-center gap-2">
-        <a
-          href={`/electrical/troubleshoot?device=${device.id}&circuit=${circuit.id}`}
-          onClick={(e) => e.stopPropagation()}
-          className="bp-dim text-[10px] uppercase tracking-widest text-bp-line-soft underline hover:text-bp-accent"
-        >
-          Not sure which wire is hot? →
-        </a>
-        {device.fieldNotes && (
-          <span className="bp-dim flex items-center gap-1 rounded-sm bg-bp-paper-raised/60 px-2 py-0.5 text-[10px] text-bp-ok">
-            📋 {device.fieldNotes}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                patch({ fieldNotes: undefined });
-              }}
-              className="ml-1 text-bp-line-soft hover:text-bp-danger"
-              title="Clear field notes"
+          <div className="flex flex-wrap items-center gap-2">
+            <a
+              href={`/electrical/troubleshoot?device=${device.id}&circuit=${circuit.id}`}
+              className="bp-dim text-[10px] uppercase tracking-widest text-bp-line-soft underline hover:text-bp-accent"
             >
-              ✕
-            </button>
-          </span>
-        )}
-      </div>
+              Not sure which wire is hot? →
+            </a>
+            {device.fieldNotes && (
+              <span className="bp-dim flex items-center gap-1 rounded-sm bg-bp-paper-raised/60 px-2 py-0.5 text-[10px] text-bp-ok">
+                📋 {device.fieldNotes}
+                <button
+                  onClick={() => patch({ fieldNotes: undefined })}
+                  className="ml-1 text-bp-line-soft hover:text-bp-danger"
+                  title="Clear field notes"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -359,10 +424,12 @@ function CircuitPanel({
   circuit,
   rooms,
   system,
+  defaultOpen,
 }: {
   circuit: CircuitInput;
   rooms: RoomFacts[];
   system: UnitSystem;
+  defaultOpen: boolean;
 }) {
   const updateCircuit = useElectrical((s) => s.updateCircuit);
   const removeCircuit = useElectrical((s) => s.removeCircuit);
@@ -371,8 +438,23 @@ function CircuitPanel({
   const updateLoad = useElectrical((s) => s.updateLoad);
   const removeLoad = useElectrical((s) => s.removeLoad);
 
+  const typeTag = circuit.breakerType === "standard" ? "" : ` ${circuit.breakerType.toUpperCase()}`;
+  const summary = `${circuit.breakerAmps}A${circuit.poles === 2 ? "/2-pole" : ""}${typeTag} · ${circuit.cable} · ${circuit.devices.length} device${circuit.devices.length === 1 ? "" : "s"}${circuit.loads.length > 0 ? ` · ${circuit.loads.length} load${circuit.loads.length === 1 ? "" : "s"}` : ""}${circuit.existing ? " · existing" : ""}`;
+
   return (
-    <section className="bp-panel p-3">
+    <Section
+      title={circuit.name || "Circuit"}
+      summary={summary}
+      defaultOpen={defaultOpen}
+      actions={
+        <button
+          onClick={() => removeCircuit(circuit.id)}
+          className="bp-dim h-8 rounded-sm border border-bp-line-faint px-2 text-[11px] text-bp-line-soft hover:border-bp-danger hover:text-bp-danger"
+        >
+          Remove
+        </button>
+      }
+    >
       <div className="flex flex-wrap items-end gap-2">
         <label className="flex grow flex-col gap-0.5">
           <span className={tinyLabel}>Circuit name</span>
@@ -466,15 +548,9 @@ function CircuitPanel({
           />
           <span className={tinyLabel}>Existing circuit</span>
         </label>
-        <button
-          onClick={() => removeCircuit(circuit.id)}
-          className="bp-dim h-9 rounded-sm border border-bp-line-faint px-2 text-[11px] text-bp-line-soft hover:border-bp-danger hover:text-bp-danger"
-        >
-          Remove
-        </button>
       </div>
 
-      <div className="mt-3 flex flex-col gap-2">
+      <div className="mt-4 flex flex-col gap-2.5">
         <p className={tinyLabel}>Devices (in circuit order, panel → end of run)</p>
         {circuit.devices.map((d) => (
           <DeviceCard key={d.id} circuit={circuit} device={d} rooms={rooms} system={system} />
@@ -487,7 +563,7 @@ function CircuitPanel({
         </button>
       </div>
 
-      <div className="mt-3">
+      <div className="mt-4">
         <p className={`${tinyLabel} mb-1.5`}>Plug-in / fixed loads on this circuit</p>
         <LoadRows
           loads={circuit.loads}
@@ -496,7 +572,7 @@ function CircuitPanel({
           onRemove={(id) => removeLoad(circuit.id, id)}
         />
       </div>
-    </section>
+    </Section>
   );
 }
 
@@ -626,8 +702,10 @@ export function ElectricalForm({ system }: { system: UnitSystem }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="bp-panel p-3">
-        <h3 className="bp-panel-title mb-2 text-sm">Panel</h3>
+      <Section
+        title="Panel"
+        summary={`${input.panel.label} · ${input.panel.mainAmps}A main · ${input.panel.slots} spaces`}
+      >
         <div className="flex flex-wrap items-end gap-2">
           <label className="flex grow flex-col gap-0.5">
             <span className={tinyLabel}>Label</span>
@@ -667,12 +745,17 @@ export function ElectricalForm({ system }: { system: UnitSystem }) {
             </select>
           </label>
         </div>
-      </section>
+      </Section>
 
-      <section className="bp-panel p-3">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <h3 className="bp-panel-title text-sm">Rooms</h3>
-          <div className="flex gap-1.5">
+      <Section
+        title="Rooms"
+        summary={
+          input.rooms.length === 0
+            ? "none yet — add rooms to unlock code checks"
+            : `${input.rooms.length} room${input.rooms.length === 1 ? "" : "s"}: ${input.rooms.map((r) => r.name).join(", ")}`
+        }
+        actions={
+          <>
             {planWalls.length > 0 && (
               <button
                 onClick={importPlannedRoom}
@@ -688,8 +771,9 @@ export function ElectricalForm({ system }: { system: UnitSystem }) {
             >
               + Room
             </button>
-          </div>
-        </div>
+          </>
+        }
+      >
         <div className="flex flex-col gap-2">
           {input.rooms.map((r) => (
             <RoomRow key={r.id} room={r} system={system} />
@@ -700,10 +784,16 @@ export function ElectricalForm({ system }: { system: UnitSystem }) {
             </p>
           )}
         </div>
-      </section>
+      </Section>
 
       {input.circuits.map((c) => (
-        <CircuitPanel key={c.id} circuit={c} rooms={input.rooms} system={system} />
+        <CircuitPanel
+          key={c.id}
+          circuit={c}
+          rooms={input.rooms}
+          system={system}
+          defaultOpen={input.circuits.length === 1}
+        />
       ))}
       <button
         onClick={addCircuit}

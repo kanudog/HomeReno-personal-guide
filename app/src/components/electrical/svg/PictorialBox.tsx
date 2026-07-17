@@ -5,6 +5,7 @@ import { CABLES } from "@/lib/modules/electrical/data/conductors";
 import { deviceConfig, deviceSpec } from "@/lib/modules/electrical/data/devices";
 import { formatIn3 } from "@/lib/modules/electrical/data/boxes";
 import { GLYPHS } from "./deviceGlyphs";
+import { orthoPath, tapeOnLastSegment, type Pt } from "./ortho";
 import {
   ROLE_LABELS,
   SCREW_COLORS,
@@ -14,21 +15,16 @@ import {
 } from "../palette";
 
 /**
- * Pictorial "inside the box" wiring diagram for one device plan.
- * Conductors route from cable entries (left) through the splice zone to
- * screw terminals / leads on the device glyph (right). `activeStep`
- * highlights one make-up step; null shows everything.
+ * Pictorial "inside the box" wiring diagram, routed like a real schematic:
+ * every conductor leaves its cable horizontally, runs a dedicated vertical
+ * channel, and lands on its terminal / wire nut with 90° bends. Wires to
+ * right-side terminals loop around the device on bypass lanes so nothing
+ * crosses the device body. `activeStep` highlights one make-up step.
  */
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-function wirePath(s: Point, e: Point): string {
-  const reach = Math.max(60, Math.abs(e.x - s.x) * 0.45);
-  return `M ${s.x} ${s.y} C ${s.x + reach} ${s.y}, ${e.x - reach} ${e.y}, ${e.x} ${e.y}`;
-}
+const CH_X0 = 116; // first vertical channel
+const CH_DX = 15;
+const NUT_X = 344; // group splice column
 
 function WireNutShape({ x, y, size, active }: { x: number; y: number; size: string; active: boolean }) {
   const fill = WIRENUT_COLORS[size] ?? "#9aa7b4";
@@ -61,38 +57,59 @@ export function PictorialBox({
   if (!spec || !config || !glyph) return null;
 
   const terminals = config.terminalsOverride ?? spec.terminals;
-  const W = 780;
-  const H = Math.max(400, plan.cables.length * 132 + 120, glyph.h + 190);
-  const gx = W - glyph.w - 118;
-  const gy = (H - glyph.h) / 2 - 8;
+  const leadNutOf = (terminalId: string) =>
+    plan.wirenuts.find((n) => n.id === `${plan.deviceId}.WN-L-${terminalId}`);
+  const groupNuts = plan.wirenuts.filter((n) => !n.id.includes(".WN-L-"));
 
-  const termPoint = (terminalId: string): Point | null => {
+  // bypass lanes: conductors + pigtails that land on right-side terminals
+  const glyphSide = (terminalId: string) => glyph.terminals[terminalId]?.side;
+  let rightLanes = 0;
+  for (const c of plan.connections) {
+    if (c.target.kind === "terminal" && glyphSide(c.target.terminalId) === "right" && !leadNutOf(c.target.terminalId)) {
+      rightLanes += c.conductorIds.length;
+    }
+  }
+  for (const nut of groupNuts) {
+    if (nut.pigtail && glyphSide(nut.pigtail.toTerminalId) === "right") rightLanes += 1;
+  }
+
+  const W = 780;
+  const H = Math.max(
+    400,
+    plan.cables.length * 132 + 120,
+    glyph.h + 190 + (rightLanes > 0 ? rightLanes * 14 + 26 : 0),
+  );
+  const gx = W - glyph.w - 118;
+  const gy = (H - glyph.h) / 2 - 10 - (rightLanes > 0 ? rightLanes * 6 : 0);
+
+  const termPoint = (terminalId: string): Pt | null => {
     const t = glyph.terminals[terminalId];
     if (!t) return null;
     return { x: gx + t.x, y: gy + t.y };
   };
 
-  // ---- geometry: cable entries + conductor starts ---------------------------
+  // ---- cable entries + conductor starts -------------------------------------
   const entryYs = plan.cables.map((_, i) =>
-    plan.cables.length === 1
-      ? H / 2 - 10
-      : 96 + i * ((H - 200) / (plan.cables.length - 1)),
+    plan.cables.length === 1 ? H / 2 - 10 : 96 + i * ((H - 210) / (plan.cables.length - 1)),
   );
-  const starts = new Map<string, Point>();
+  const starts = new Map<string, Pt>();
   plan.cables.forEach((cable, ci) => {
     cable.conductors.forEach((wire, wi) => {
-      const spread = (wi - (cable.conductors.length - 1) / 2) * 14;
+      const spread = (wi - (cable.conductors.length - 1) / 2) * 15;
       starts.set(wire.id, { x: 70, y: entryYs[ci]! + spread });
     });
   });
 
-  // ---- geometry: wire nuts ----------------------------------------------------
-  const leadNutOf = (terminalId: string) =>
-    plan.wirenuts.find((n) => n.id === `${plan.deviceId}.WN-L-${terminalId}`);
-  const groupNuts = plan.wirenuts.filter((n) => !n.id.includes(".WN-L-"));
-  const nutPos = new Map<string, Point>();
+  // dedicated vertical channel per conductor, ordered by start height
+  const channelOf = new Map<string, number>();
+  [...starts.entries()]
+    .sort((a, b) => a[1].y - b[1].y)
+    .forEach(([id], i) => channelOf.set(id, CH_X0 + i * CH_DX));
+
+  // ---- wire nut positions ----------------------------------------------------
+  const nutPos = new Map<string, Pt>();
   groupNuts.forEach((n, i) => {
-    nutPos.set(n.id, { x: 350, y: 78 + i * 58 });
+    nutPos.set(n.id, { x: NUT_X, y: 84 + i * 60 });
   });
   for (const t of terminals) {
     const nut = leadNutOf(t.id);
@@ -100,49 +117,101 @@ export function PictorialBox({
     if (nut && p) nutPos.set(nut.id, { x: p.x - 44, y: p.y });
   }
 
-  // ---- per-conductor endpoints + step index ------------------------------------
-  const ends = new Map<string, Point>();
-  const stepOf = new Map<string, number>();
-  const activePrep =
-    activeStep !== null &&
-    plan.connections.some((c) => c.step === activeStep && c.target.kind === "prep");
+  // ---- routes ----------------------------------------------------------------
+  let laneIdx = 0;
+  const bypassLane = () => {
+    const k = laneIdx++;
+    return {
+      y: gy + glyph.h + 26 + k * 14,
+      x: gx + glyph.w + 24 + k * 14,
+    };
+  };
+
+  /** Waypoints from a point in the left routing field to a terminal. */
+  const approachTerminal = (from: Pt, viaX: number, terminalId: string): Pt[] => {
+    const p = termPoint(terminalId);
+    if (!p) return [from];
+    const side = glyphSide(terminalId);
+    if (side === "right") {
+      const lane = bypassLane();
+      return [
+        from,
+        { x: viaX, y: from.y },
+        { x: viaX, y: lane.y },
+        { x: lane.x, y: lane.y },
+        { x: lane.x, y: p.y },
+        { x: p.x + 9, y: p.y },
+      ];
+    }
+    if (side === "bottom") {
+      const ay = p.y + 18;
+      return [from, { x: viaX, y: from.y }, { x: viaX, y: ay }, { x: p.x, y: ay }, { x: p.x, y: p.y + 8 }];
+    }
+    if (side === "top") {
+      const ay = p.y - 18;
+      return [from, { x: viaX, y: from.y }, { x: viaX, y: ay }, { x: p.x, y: ay }, { x: p.x, y: p.y - 8 }];
+    }
+    // left side (screws + leads' nut handled by caller)
+    return [from, { x: viaX, y: from.y }, { x: viaX, y: p.y }, { x: p.x - 9, y: p.y }];
+  };
+
+  interface Route {
+    wire: ResolvedConductor;
+    step: number;
+    pts: Pt[];
+  }
+  const routes: Route[] = [];
 
   for (const conn of plan.connections) {
-    for (const [idx, wireId] of conn.conductorIds.entries()) {
-      stepOf.set(wireId, conn.step);
+    conn.conductorIds.forEach((wireId, idx) => {
+      const wire = plan.cables.flatMap((c) => c.conductors).find((w) => w.id === wireId);
+      const start = starts.get(wireId);
+      const chX = channelOf.get(wireId);
+      if (!wire || !start || chX === undefined) return;
+
+      let pts: Pt[] | null = null;
       if (conn.target.kind === "terminal") {
         const nut = leadNutOf(conn.target.terminalId);
-        const p = nut ? nutPos.get(nut.id) : termPoint(conn.target.terminalId);
-        if (p)
-          ends.set(wireId, {
-            x: p.x + (nut ? -8 : -10),
-            y: p.y + (conn.conductorIds.length > 1 ? (idx - (conn.conductorIds.length - 1) / 2) * 10 : 0),
-          });
+        if (nut) {
+          const np = nutPos.get(nut.id)!;
+          const ey = np.y + (conn.conductorIds.length > 1 ? (idx - (conn.conductorIds.length - 1) / 2) * 10 : 0);
+          pts = [start, { x: chX, y: start.y }, { x: chX, y: ey }, { x: np.x - 9, y: ey }];
+        } else {
+          pts = approachTerminal(start, chX, conn.target.terminalId);
+        }
       } else if (conn.target.kind === "wirenut") {
-        const p = nutPos.get(conn.target.wirenutId);
-        if (p)
-          ends.set(wireId, {
-            x: p.x - 10 + idx * 8,
-            y: p.y + 13,
-          });
+        const np = nutPos.get(conn.target.wirenutId);
+        if (np) {
+          const ey = np.y - 7 + idx * 9;
+          pts = [start, { x: chX, y: start.y }, { x: chX, y: ey }, { x: np.x - 11, y: ey }];
+        }
       }
-    }
+      if (pts) routes.push({ wire, step: conn.step, pts });
+    });
   }
 
-  const conductorList: { wire: ResolvedConductor; s: Point; e: Point; step: number }[] = [];
-  for (const cable of plan.cables) {
-    for (const wire of cable.conductors) {
-      const s = starts.get(wire.id);
-      const e = ends.get(wire.id);
-      const step = stepOf.get(wire.id);
-      if (s && e && step !== undefined) conductorList.push({ wire, s, e, step });
-    }
+  // pigtails: group nut → terminal, orthogonal, dashed
+  const pigtailRoutes: { color: string; halo?: string; step: number | undefined; pts: Pt[] }[] = [];
+  for (const nut of groupNuts) {
+    if (!nut.pigtail) continue;
+    const np = nutPos.get(nut.id);
+    const step = plan.connections.find(
+      (c) => c.target.kind === "wirenut" && c.target.wirenutId === nut.id,
+    )?.step;
+    if (!np) continue;
+    const from = { x: np.x + 13, y: np.y + 3 };
+    const pts = approachTerminal(from, np.x + 36, nut.pigtail.toTerminalId);
+    const color = WIRE_COLORS[nut.pigtail.color];
+    pigtailRoutes.push({ color: color.stroke, halo: color.halo, step, pts });
   }
 
   const dim = (step: number) => activeStep !== null && step !== activeStep;
   const lit = (step: number) => activeStep !== null && step === activeStep;
+  const activePrep =
+    activeStep !== null &&
+    plan.connections.some((c) => c.step === activeStep && c.target.kind === "prep");
 
-  const rolesPresent = [...new Set(conductorList.map((c) => c.wire.role))];
+  const rolesPresent = [...new Set(routes.map((r) => r.wire.role))];
 
   return (
     <div>
@@ -168,50 +237,53 @@ export function PictorialBox({
         {plan.cables.map((cable, i) => {
           const y = entryYs[i]!;
           const sheath = SHEATH_COLORS[CABLES[cable.type].sheathColor] ?? "#dbe7f3";
+          const short = cable.label.split(" (")[0]!;
           return (
             <g key={cable.role}>
               <rect x={0} y={y - 15} width={66} height={30} rx={6} fill={sheath} stroke="rgba(10,33,56,0.6)" />
-              <text x={8} y={y - 22} fontSize={10.5} fill="var(--bp-line-soft)" style={{ fontFamily: "var(--font-geist-mono)" }}>
-                {cable.label}
+              <text
+                x={8}
+                y={y - 24}
+                fontSize={10.5}
+                fill="var(--bp-line-soft)"
+                stroke="var(--elec-box-fill)"
+                strokeWidth={5}
+                paintOrder="stroke"
+                style={{ fontFamily: "var(--font-geist-mono)" }}
+              >
+                {short}
               </text>
             </g>
           );
         })}
 
-        {/* conductors */}
-        {conductorList.map(({ wire, s, e, step }) => {
+        {/* conductors — orthogonal channel routing */}
+        {routes.map(({ wire, step, pts }) => {
           const color = WIRE_COLORS[wire.color];
-          const d = wirePath(s, e);
+          const d = orthoPath(pts, 8);
+          const startTape = wire.reidentifiedTo
+            ? { x: pts[0]!.x + 20, y: pts[0]!.y - 5.5, w: 17, h: 11 }
+            : null;
+          const endTape = wire.reidentifiedTo ? tapeOnLastSegment(pts) : null;
+          const tapeColor = wire.reidentifiedTo ? WIRE_COLORS[wire.reidentifiedTo].stroke : "";
           return (
-            <g key={wire.id} opacity={dim(step) ? 0.24 : 1}>
+            <g key={wire.id} opacity={dim(step) ? 0.22 : 1}>
               {lit(step) && <path d={d} fill="none" stroke="var(--bp-accent)" strokeWidth={10} opacity={0.4} />}
               {color.halo && <path d={d} fill="none" stroke={color.halo} strokeWidth={6.5} />}
               <path d={d} fill="none" stroke={color.stroke} strokeWidth={wire.color === "bare" ? 3.4 : 4.5} strokeLinecap="round" />
-              {wire.reidentifiedTo && (
-                <>
-                  <rect x={s.x + 22} y={s.y - 5.5} width={17} height={11} rx={2.5} fill={WIRE_COLORS[wire.reidentifiedTo].stroke} stroke="rgba(10,33,56,0.6)" />
-                  <rect x={e.x - 40} y={e.y - 5.5} width={17} height={11} rx={2.5} fill={WIRE_COLORS[wire.reidentifiedTo].stroke} stroke="rgba(10,33,56,0.6)" />
-                </>
-              )}
+              {startTape && <rect {...startTape} rx={2.5} fill={tapeColor} stroke="rgba(10,33,56,0.6)" />}
+              {endTape && <rect x={endTape.x} y={endTape.y} width={endTape.w} height={endTape.h} rx={2.5} fill={tapeColor} stroke="rgba(10,33,56,0.6)" />}
             </g>
           );
         })}
 
         {/* pigtails from group nuts to terminals */}
-        {groupNuts.map((nut) => {
-          if (!nut.pigtail) return null;
-          const from = nutPos.get(nut.id);
-          const to = termPoint(nut.pigtail.toTerminalId);
-          if (!from || !to) return null;
-          const color = WIRE_COLORS[nut.pigtail.color];
-          const step = plan.connections.find(
-            (c) => c.target.kind === "wirenut" && c.target.wirenutId === nut.id,
-          )?.step;
-          const d = wirePath({ x: from.x + 10, y: from.y + 8 }, { x: to.x - 10, y: to.y });
+        {pigtailRoutes.map((pr, i) => {
+          const d = orthoPath(pr.pts, 8);
           return (
-            <g key={`pig-${nut.id}`} opacity={step !== undefined && dim(step) ? 0.24 : 1}>
-              {color.halo && <path d={d} fill="none" stroke={color.halo} strokeWidth={6} />}
-              <path d={d} fill="none" stroke={color.stroke} strokeWidth={4} strokeLinecap="round" strokeDasharray="7 4" />
+            <g key={`pig-${i}`} opacity={pr.step !== undefined && dim(pr.step) ? 0.22 : 1}>
+              {pr.halo && <path d={d} fill="none" stroke={pr.halo} strokeWidth={6} />}
+              <path d={d} fill="none" stroke={pr.color} strokeWidth={4} strokeLinecap="round" strokeDasharray="8 5" />
             </g>
           );
         })}
@@ -250,7 +322,6 @@ export function PictorialBox({
               (c) => c.step === activeStep && c.target.kind === "terminal" && c.target.terminalId === t.id,
             );
           const labelRight = gt?.side === "right";
-          // short form — the full label lives in the Connections tab
           const shortLabel = t.label.split(" (")[0]!;
           return (
             <g key={t.id}>
@@ -259,10 +330,13 @@ export function PictorialBox({
               <line x1={p.x - 4.5} y1={p.y} x2={p.x + 4.5} y2={p.y} stroke="rgba(10,33,56,0.8)" strokeWidth={1.6} />
               <text
                 x={labelRight ? p.x + 13 : gt?.side === "left" ? p.x - 12 : p.x}
-                y={gt?.side === "bottom" ? p.y + 19 : gt?.side === "top" ? p.y - 12 : gt?.side === "left" ? p.y - 12 : p.y + 3.5}
+                y={gt?.side === "bottom" ? p.y + 21 : gt?.side === "top" ? p.y - 13 : gt?.side === "left" ? p.y - 12 : p.y + 3.5}
                 fontSize={9.5}
                 textAnchor={labelRight ? "start" : gt?.side === "left" ? "end" : "middle"}
                 fill={active ? "var(--bp-accent)" : "var(--bp-line-soft)"}
+                stroke="var(--elec-box-fill)"
+                strokeWidth={4}
+                paintOrder="stroke"
                 style={{ fontFamily: "var(--font-geist-mono)" }}
               >
                 {shortLabel}
@@ -291,7 +365,7 @@ export function PictorialBox({
       {/* legend */}
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
         {rolesPresent.map((role) => {
-          const wire = conductorList.find((c) => c.wire.role === role)!.wire;
+          const wire = routes.find((r) => r.wire.role === role)!.wire;
           const color = WIRE_COLORS[wire.reidentifiedTo ?? wire.color];
           return (
             <span key={role} className="bp-dim flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-bp-line-soft">
@@ -303,7 +377,7 @@ export function PictorialBox({
             </span>
           );
         })}
-        {conductorList.some((c) => c.wire.reidentifiedTo) && (
+        {routes.some((r) => r.wire.reidentifiedTo) && (
           <span className="bp-dim text-[10px] text-bp-line-soft">▮ = re-identification tape at both ends</span>
         )}
       </div>

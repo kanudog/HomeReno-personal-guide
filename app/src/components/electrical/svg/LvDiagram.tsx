@@ -2,11 +2,13 @@
 
 import type { LvInstance, LvResolvedWire } from "@/lib/modules/electrical/engine/lowVoltage";
 import type { LvWireColor } from "@/lib/modules/electrical/data/lowVoltage";
+import { orthoPath, type Pt } from "./ortho";
 
 /**
- * Component-style diagram for a low-voltage recipe: boxes with labeled
- * pins, columns by role (power → controller → peripherals), colored
- * jumper wires between pin dots.
+ * Component diagram for a low-voltage recipe, routed schematic-style:
+ * boxes in role columns (power → controller → peripherals), wires on 90°
+ * channel routing through the gutters between columns; wires spanning the
+ * whole diagram (supply → peripheral) run a power bus along the bottom.
  */
 
 const LV_WIRE_COLORS: Record<LvWireColor, { stroke: string; halo?: string }> = {
@@ -22,10 +24,9 @@ const COL_X = [24, 300, 576];
 const BOX_W = 190;
 const PIN_GAP = 24;
 const HEAD_H = 30;
+const CH_DX = 11;
 
-interface PinPoint {
-  x: number;
-  y: number;
+interface PinPoint extends Pt {
   side: "left" | "right";
 }
 
@@ -39,20 +40,22 @@ export function LvDiagram({
   activeWire: number | null;
 }) {
   const drawable = instances.filter((i) => i.component.pins.length > 0);
-  const colOf = (i: LvInstance) =>
-    i.component.kind === "power" ? 0 : i.component.kind === "controller" ? 1 : 2;
+  const colOf = (ref: string) => {
+    const inst = drawable.find((i) => i.ref === ref);
+    if (!inst) return 2;
+    return inst.component.kind === "power" ? 0 : inst.component.kind === "controller" ? 1 : 2;
+  };
 
   // stack boxes per column
   const positions = new Map<string, { x: number; y: number; h: number }>();
   const colY = [16, 16, 16];
   for (const inst of drawable) {
-    const col = colOf(inst);
+    const col = colOf(inst.ref);
     const h = HEAD_H + inst.component.pins.length * PIN_GAP + 10;
     positions.set(inst.ref, { x: COL_X[col]!, y: colY[col]!, h });
     colY[col] = colY[col]! + h + 26;
   }
-  const H = Math.max(...colY, 260) + 8;
-  const W = 800;
+  const maxBottom = Math.max(...colY, 240);
 
   const pinPoint = (ref: string, pinId: string): PinPoint | null => {
     const inst = drawable.find((i) => i.ref === ref);
@@ -60,7 +63,7 @@ export function LvDiagram({
     if (!inst || !pos) return null;
     const idx = inst.component.pins.findIndex((p) => p.id === pinId);
     if (idx < 0) return null;
-    const col = colOf(inst);
+    const col = colOf(ref);
     const pin = inst.component.pins[idx]!;
     const side: "left" | "right" =
       col === 0
@@ -77,27 +80,48 @@ export function LvDiagram({
     };
   };
 
-  const wirePath = (a: PinPoint, b: PinPoint) => {
-    const ax = a.x + (a.side === "right" ? 6 : -6);
-    const bx = b.x + (b.side === "right" ? 6 : -6);
-    const reach = Math.max(46, Math.abs(bx - ax) * 0.4);
-    const c1 = ax + (a.side === "right" ? reach : -reach);
-    const c2 = bx + (b.side === "right" ? reach : -reach);
-    return `M ${ax} ${a.y} C ${c1} ${a.y}, ${c2} ${b.y}, ${bx} ${b.y}`;
-  };
+  // ---- routing: gutter channels + bottom bus --------------------------------
+  const G1_X0 = 226; // gutter between power and controller columns
+  const G2_X0 = 502; // gutter between controller and peripheral columns
+  let g1Count = 0;
+  let g2Count = 0;
+  let busCount = 0;
+
+  const routes = wires.map((w) => {
+    const a = pinPoint(w.from.ref, w.from.pin);
+    const b = pinPoint(w.to.ref, w.to.pin);
+    if (!a || !b) return { w, pts: null as Pt[] | null };
+    const exitA: Pt = { x: a.x + (a.side === "right" ? 6 : -6), y: a.y };
+    const exitB: Pt = { x: b.x + (b.side === "right" ? 6 : -6), y: b.y };
+    const pair = [colOf(w.from.ref), colOf(w.to.ref)].sort() as [number, number];
+
+    let pts: Pt[];
+    if (pair[0] === 0 && pair[1] === 2) {
+      // full-span: down a g1 channel, along the bottom bus, up a g2 channel
+      const g1 = G1_X0 + g1Count++ * CH_DX;
+      const g2 = G2_X0 + g2Count++ * CH_DX;
+      const busY = maxBottom + 14 + busCount++ * 12;
+      pts = [exitA, { x: g1, y: exitA.y }, { x: g1, y: busY }, { x: g2, y: busY }, { x: g2, y: exitB.y }, exitB];
+    } else {
+      const useG1 = pair[1] <= 1;
+      const chX = useG1 ? G1_X0 + g1Count++ * CH_DX : G2_X0 + g2Count++ * CH_DX;
+      pts = [exitA, { x: chX, y: exitA.y }, { x: chX, y: exitB.y }, exitB];
+    }
+    return { w, pts };
+  });
+
+  const H = maxBottom + 14 + busCount * 12 + 20;
+  const W = 800;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Low-voltage wiring diagram">
-      {/* wires under boxes' pins but over nothing else */}
-      {wires.map((w) => {
-        const a = pinPoint(w.from.ref, w.from.pin);
-        const b = pinPoint(w.to.ref, w.to.pin);
-        if (!a || !b) return null;
+      {routes.map(({ w, pts }) => {
+        if (!pts) return null;
         const color = LV_WIRE_COLORS[w.color];
-        const d = wirePath(a, b);
+        const d = orthoPath(pts, 7);
         const dim = activeWire !== null && activeWire !== w.step;
         return (
-          <g key={w.step} opacity={dim ? 0.22 : 1}>
+          <g key={w.step} opacity={dim ? 0.2 : 1}>
             {activeWire === w.step && (
               <path d={d} fill="none" stroke="var(--bp-accent)" strokeWidth={9} opacity={0.4} />
             )}
